@@ -68,6 +68,7 @@
 					<include name="*.jar" />
 				</fileset>
 			</classpath>
+      <arg line="172.16.175.233 barnacle02 Administrator tclmeSRS"/>
 		</java>
 	</target>
 
