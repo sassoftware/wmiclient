@@ -292,7 +292,7 @@ public class rDeploy {
 			}
 
 			rDeploy test = new rDeploy(args[0], args[1], args[2], args[3]);
-			test.processMSICreation("C:\\temp\\Setup.msi", "C:\\temp\\setup.log", InstallState.UNINSTALL);
+			test.processMSICreation("C:\\temp\\Setup.msi", "C:\\temp\\setup.log", InstallState.INSTALL);
 			//test.manageService("rPath Install Manager",
 			//		rDeploy.ServiceState.START);
 			//String[] cmds = {"Delay=5", "uri=172.16.175.244", "IgnoreOtherCommands"};
