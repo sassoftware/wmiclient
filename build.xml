@@ -12,7 +12,7 @@
 	<property name="compile.deprecation" value="false" />
 	<property name="compile.optimize" value="true" />
 
-	<property name="main-class" value="com.rpath.management.windows.rDeploy" />
+	<property name="main-class" value="com.rpath.management.windows.WMIClientCmd" />
 
 	<path id="classpath">
 		<fileset dir="${jars}">
