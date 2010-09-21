@@ -15,7 +15,6 @@ import org.jinterop.dcom.core.JIProgId;
 import org.jinterop.dcom.core.JISession;
 import org.jinterop.dcom.core.JIString;
 import org.jinterop.dcom.core.JIVariant;
-import org.jinterop.dcom.core.JIUnsignedInteger;
 import org.jinterop.dcom.impls.JIObjectFactory;
 import org.jinterop.dcom.impls.automation.IJIDispatch;
 import org.jinterop.dcom.impls.automation.IJIEnumVariant;
@@ -82,10 +81,11 @@ public class rDeploy {
 		// HKLM/SOFTWARE/Classes/Interface
 		comObject = (IJIComObject) unknown
 				.queryInterface("76A6415B-CB41-11d1-8B02-00600806D9B6");
-
+		
 		// This will obtain the dispatch interface
 		dispatch = (IJIDispatch) JIObjectFactory.narrowObject(comObject
 				.queryInterface(IJIDispatch.IID));
+		System.out.println("foo");
 	}
 
 	public void manageRegistryKey(String keyPath, String valueName, String[] values) {
