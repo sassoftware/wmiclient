@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="lib/j-interopdeps.jar"/>
 	<classpathentry kind="lib" path="lib/jcifs-1.2.19.jar"/>
 	<classpathentry kind="lib" path="lib/progIdVsClsidDB.properties"/>
+	<classpathentry kind="src" path="/commons-cli"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
