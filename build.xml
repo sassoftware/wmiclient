@@ -30,7 +30,7 @@
 	<target name="compile" depends="init" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
 
-		<javac srcdir="${src}" destdir="${build}" debug="${compile.debug}" deprecation="${compile.deprecation}" optimize="${compile.optimize}">
+		<javac srcdir="${src}" destdir="${build}" debug="${compile.debug}" deprecation="${compile.deprecation}" optimize="${compile.optimize}" includeantruntime="false">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
