@@ -20,7 +20,8 @@ public class JILogging {
 	
 	public JILogging(Level defaultLevel) throws SecurityException, IOException {
 		this.jilogger = JISystem.getLogger();
-		JISystem.setInBuiltLogHandler(false);
+		
+		JISystem.setInBuiltLogHandler(true);
 		JISystem.setAutoRegisteration(true);
 		this.setLevel(defaultLevel);
 	}

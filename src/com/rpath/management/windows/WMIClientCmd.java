@@ -40,11 +40,11 @@ public class WMIClientCmd {
 
 		String[] remaining = cmdline.getArgs();
 		
-		Level level = Level.INFO;
+		Level level = Level.WARNING;
 		if (cmdline.hasOption("debug")) {
 			level = Level.ALL;
 		} else if (cmdline.hasOption("verbose")) {
-			level = Level.FINE;
+			level = Level.INFO;
 		}
 		
 		try {
