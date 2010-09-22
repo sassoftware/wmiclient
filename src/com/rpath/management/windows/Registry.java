@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 
 import org.jinterop.dcom.common.IJIAuthInfo;
 import org.jinterop.dcom.common.JIException;
+import org.jinterop.winreg.IJIWinReg;
 import org.jinterop.winreg.JIPolicyHandle;
 
 /**
@@ -70,7 +71,7 @@ public class Registry {
 	 * @throws JIException 
 	 * @throws UnknownHostException 
 	 */
-	public Object[] getKey(String keyPath, String key, int expectedSize) throws JIException, UnknownHostException {
+	public String[] getKey(String keyPath, String key, int expectedSize) throws JIException, UnknownHostException {
 		// Get a handle for talking to the registry
 		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
 
@@ -80,10 +81,13 @@ public class Registry {
 		// Access the value of that key
 		Object[] data = handle.registry.winreg_QueryValue(regkey, key, expectedSize);
 
+		// Format output into a string array.
+		String[] output = this.formatOutput(data);
+		
 		// Close the registry connection
 		handle.closeConnection();
 		
-		return data;
+		return output;
 	}
 	
 	/**
@@ -94,7 +98,41 @@ public class Registry {
 	 * @throws JIException 
 	 * @throws UnknownHostException 
 	 */
-	public Object[] getKey(String keyPath, String key) throws UnknownHostException, JIException {
+	public String[] getKey(String keyPath, String key) throws UnknownHostException, JIException {
 		return this.getKey(keyPath, key, 2048);
+	}
+
+	/**
+	 * Format the output from a get request.
+	 * 
+	 * @param data return from winreg_QueryValue
+	 * @return array of strings
+	 */
+	private String[] formatOutput(Object[] data) {
+		String[] output = null;
+		
+		Integer dtype = (Integer)data[0];
+
+		// Handle simple non-list type
+		if (dtype != IJIWinReg.REG_MULTI_SZ) {
+			output = new String[]{ new String((byte [])data[1]), };
+			return output;
+		}
+		
+		// And now for the more complex results
+		byte[][] lines = (byte[][])data[1];
+		
+		// Find the first null line
+		int size = 0;
+		while (lines[size] != null)
+			size++;
+		
+		output = new String[size];
+		
+		for (int i=0; i<output.length; i++) {
+			output[i] = new String(lines[i]);
+		}
+		
+		return output;
 	}
 }

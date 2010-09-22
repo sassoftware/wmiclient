@@ -215,8 +215,9 @@ public class WMIClientCmd {
 
 		// Execute registry command
 		if (action.equals("getkey")) {
-			Object[] data = system.registry.getKey(options[0], options[1]);
-			System.out.println(new String((byte[])data[1]));
+			String[] data = system.registry.getKey(options[0], options[1]);
+			for (int i=0; i<data.length; i++)
+				System.out.println(data[i]);
 		} else if (action.equals("setkey")) {
 			String[] values = Utils.slice(options, 2);
 			system.registry.setKey(options[0], options[1], values);
