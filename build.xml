@@ -8,9 +8,9 @@
 	<property name="dist" location="dist" />
 	<property name="jars" location="lib" />
 
-	<property name="compile.debug" value="true" />
+	<property name="compile.debug" value="false" />
 	<property name="compile.deprecation" value="false" />
-	<property name="compile.optimize" value="false" />
+	<property name="compile.optimize" value="true" />
 
 	<property name="main-class" value="com.rpath.management.windows.WMIClientCmd" />
 
