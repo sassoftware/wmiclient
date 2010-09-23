@@ -31,37 +31,7 @@ public class Registry {
 		this.address = address;
 		this.authInfo = authInfo;
 	}
-	
-	/**
-	 * Set a registry key.
-	 * 
-	 * @param keyPath Path to the key in the registry
-	 * @param key Key to set
-	 * @param values Array of strings to set as the value of key
-	 * @throws JIException 
-	 * @throws UnknownHostException 
-	 */
-	public void setKey(String keyPath, String key, String[] values) throws UnknownHostException, JIException {
-		// Convert values to a byte array
-		byte[][] data = new byte[values.length][];
-		for (int i=0; i<values.length; i++) {
-			data[i] = values[i].getBytes();
-		}
-
-		// Get a handle for talking to the registry
-		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
 		
-		// Get an instance of the key to modify
-		JIPolicyHandle regkey = handle.openKey(keyPath);
-		
-		// Set the value
-		handle.registry.winreg_SetValue(regkey, key, data);
-
-		// Tear down connection
-		handle.closeConnection();
-		
-	}
-	
 	/**
 	 * Retrieve a value from the registry.
 	 * 
@@ -102,6 +72,58 @@ public class Registry {
 		return this.getKey(keyPath, key, 2048);
 	}
 
+	/**
+	 * Set a registry key.
+	 * 
+	 * @param keyPath Path to the key in the registry
+	 * @param key Key to set
+	 * @param values Array of strings to set as the value of key
+	 * @throws JIException 
+	 * @throws UnknownHostException 
+	 */
+	public void setKey(String keyPath, String key, String[] values) throws UnknownHostException, JIException {
+		// Convert values to a byte array
+		byte[][] data = new byte[values.length][];
+		for (int i=0; i<values.length; i++) {
+			data[i] = values[i].getBytes();
+		}
+
+		// Get a handle for talking to the registry
+		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
+		
+		// Get an instance of the key to modify
+		JIPolicyHandle regkey = handle.openKey(keyPath);
+		
+		// Set the value
+		handle.registry.winreg_SetValue(regkey, key, data);
+
+		// Tear down connection
+		handle.closeConnection();
+	}
+
+	/**
+	 * Create a key that doesn't already exist.
+	 * 
+	 * @param keyPath Path to the key in the registry
+	 * @param key Key to create
+	 * @throws JIException 
+	 * @throws UnknownHostException 
+	 */
+	public void createKey(String keyPath, String key) throws JIException, UnknownHostException {
+		// Get a handle for talking to the registry
+		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
+		
+		// Get an instance of the key to create
+		JIPolicyHandle regkey = handle.openKey(keyPath);
+		
+		// Create the new key
+		JIPolicyHandle newKey = handle.registry.winreg_CreateKey(regkey, key, IJIWinReg.REG_OPTION_NON_VOLATILE, IJIWinReg.KEY_ALL_ACCESS);
+		handle.registry.winreg_CloseKey(newKey);
+		
+		// Tear down the connection to the registry
+		handle.closeConnection();
+	}
+	
 	/**
 	 * Format the output from a get request.
 	 * 

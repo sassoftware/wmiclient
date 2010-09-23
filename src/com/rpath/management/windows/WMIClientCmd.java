@@ -196,7 +196,7 @@ public class WMIClientCmd {
 	 */
 	private static void registryCmd(ManagedSystem system, String[] args) throws UnknownHostException, JIException {
 		if (args.length == 0)
-			printUsage("registry <getkey|setkey>");
+			printUsage("registry <getkey|setkey|createkey>");
 		
 		// Parse registry command line
 		String[] options = null;
@@ -209,8 +209,12 @@ public class WMIClientCmd {
 			options = Utils.slice(args, 1);
 			if (options.length < 3)
 				printUsage("registry setkey <keyPath> <key> <value>");
+		} else if (action.toLowerCase().equals("createkey")) {
+			options = Utils.slice(args, 1);
+			if (options.length != 2)
+				printUsage("registry createkey <keyPath> <key>");
 		} else {
-			printUsage("registry <getkey|setkey>");
+			printUsage("registry <getkey|setkey|createkey>");
 		}
 
 		// Execute registry command
@@ -221,6 +225,8 @@ public class WMIClientCmd {
 		} else if (action.equals("setkey")) {
 			String[] values = Utils.slice(options, 2);
 			system.registry.setKey(options[0], options[1], values);
+		} else if (action.equals("createkey")) {
+			system.registry.createKey(options[0], options[1]);
 		}
 	}
 	
