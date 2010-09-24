@@ -16,4 +16,4 @@ for jar in $WMICDIR/*.jar ; do
     CLASSPATH="$CLASSPATH:$jar"
 done
 
-java -classpath $CLASSPATH com.rpath.management.windows.WMIClientCmd $@
+java -classpath $CLASSPATH com.rpath.management.windows.WMIClientCmd "$@"
