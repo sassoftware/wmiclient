@@ -7,6 +7,7 @@ import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.IJIComObject;
 import org.jinterop.dcom.core.JIArray;
 import org.jinterop.dcom.core.JIString;
+import org.jinterop.dcom.core.JIUnsignedInteger;
 import org.jinterop.dcom.core.JIVariant;
 import org.jinterop.dcom.impls.automation.IJIDispatch;
 import org.jinterop.dcom.impls.automation.IJIEnumVariant;
@@ -24,6 +25,34 @@ public class Services {
 	private final int RETURN_IMMEDIATE = 0x10;
 	private final int FORWARD_ONLY = 0x20;
 
+	private String status_strings[] = new String[] {
+		"Success",
+		"Not Supported",
+		"Access Denied",
+		"Dependent Services Running",
+		"Invalid Service Control",
+		"Service Cannot Accept Control",
+		"Service Not Active",
+		"Service Request Timeout",
+		"Unknown Failure",
+		"Path Not Found",
+		"Service Already Running",
+		"Service Database Locked",
+		"Service Dependency Deleted",
+		"Service Dependency Failure",
+		"Service Disabled",
+		"Service Logon Failure", 
+		"Service Marked For Deletion",
+		"Service No Thread",
+		"Status Circular Dependency",
+		"Status Duplicate Name",
+		"Status Invalid Name",
+		"Status Invalid Parameter",
+		"Status Invalid Service Account",
+		"Status Service Exists",
+		"Service Already Paused",
+	};
+	
 	/**
 	 * Constructor for services class
 	 * 
@@ -51,6 +80,28 @@ public class Services {
 	 */
 	public void stopService(String serviceName) throws JIException {
 		this.service(serviceName, "StopService");
+	}
+	
+	/**
+	 * Query the status of a service.
+	 * 
+	 * @param serviceName name of the service to query
+	 * @throws JIException 
+	 */
+	public String[] getStatus(String serviceName) throws JIException {
+		// Query the machine for services matching the requested name
+		JIVariant[] queryResults = this.queryServices(serviceName);
+		
+		// Instantiate a string array to store the results
+		String[] status = new String[queryResults.length];
+		
+		for (int i=0; i<queryResults.length; i++) {
+			IJIDispatch dispatch = (IJIDispatch)narrowObject(queryResults[i].getObjectAsComObject());
+			int rc = dispatch.callMethodA("InterrogateService").getObjectAsInt();
+			status[i] = this.status_strings[rc];
+		}
+		
+		return status;
 	}
 	
 	/**

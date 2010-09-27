@@ -172,10 +172,12 @@ public class WMIClientCmd {
 		System.out.println("Actions:");
 		System.out.println("    registry getkey <keyPath> <key>");
 		System.out.println("    registry setkey <keyPath> <key> <value>");
+		System.out.println("    registry cratekey <keyPath> <key>");
 		System.out.println("    service start <serviceName>");
 		System.out.println("    service stop <serviceName>");
-		System.out.println("    fs get <filePath>");
-		System.out.println("    fs set <filePath>");
+		System.out.println("    service getstatus <servicename>");
+		//System.out.println("    fs get <filePath>");
+		//System.out.println("    fs set <filePath>");
 		
 		if (msg != null) {
 			System.out.println();
@@ -241,12 +243,12 @@ public class WMIClientCmd {
 		// Parse service command line
 		String[] options = null;
 		String action = args[0].toLowerCase();
-		if (action.equals("start") || action.equals("stop")) {
+		if (action.equals("start") || action.equals("stop") || action.equals("getstatus")) {
 			options = Utils.slice(args, 1);
 			if (options.length != 1)
-				printUsage("service <start|stop> <serviceName>");
+				printUsage("service <start|stop|getstatus> <serviceName>");
 		} else {
-			printUsage("service <start|stop> <serviceName>");
+			printUsage("service <start|stop|getstatus> <serviceName>");
 		}
 		
 		// Execute service command
@@ -254,6 +256,10 @@ public class WMIClientCmd {
 			system.services.startService(options[0]);
 		} else if (action.equals("stop")) {
 			system.services.stopService(options[0]);
+		} else if (action.equals("getstatus")) {
+			String[] status = system.services.getStatus(options[0]);
+			for (String rc : status)
+				System.out.println(rc);
 		}
 	}
 }
