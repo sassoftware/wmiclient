@@ -20,37 +20,35 @@ import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
  */
 public class Services {
 	private Session session = null;
+	private Query query = null;
 	
-	private final int RETURN_IMMEDIATE = 0x10;
-	private final int FORWARD_ONLY = 0x20;
-
-	private final String status_strings[] = new String[] {
-		"Success",
-		"Not Supported",
-		"Access Denied",
-		"Dependent Services Running",
-		"Invalid Service Control",
-		"Service Cannot Accept Control",
-		"Service Not Active",
-		"Service Request Timeout",
-		"Unknown Failure",
-		"Path Not Found",
-		"Service Already Running",
-		"Service Database Locked",
-		"Service Dependency Deleted",
-		"Service Dependency Failure",
-		"Service Disabled",
-		"Service Logon Failure", 
-		"Service Marked For Deletion",
-		"Service No Thread",
-		"Status Circular Dependency",
-		"Status Duplicate Name",
-		"Status Invalid Name",
-		"Status Invalid Parameter",
-		"Status Invalid Service Account",
-		"Status Service Exists",
-		"Service Already Paused",
-	};
+	private final StatusCodes status_codes = new StatusCodes(new Object[][] {
+		{0, "Success"},
+		{1, "Not Supported"},
+		{2, "Access Denied"},
+		{3, "Dependent Services Running"},
+		{4, "Invalid Service Control"},
+		{5, "Service Cannot Accept Control"},
+		{6, "Service Not Active"},
+		{7, "Service Request Timeout"},
+		{8, "Unknown Failure"},
+		{9, "Path Not Found"},
+		{10, "Service Already Running"},
+		{11, "Service Database Locked"},
+		{12, "Service Dependency Deleted"},
+		{13, "Service Dependency Failure"},
+		{14, "Service Disabled"},
+		{15, "Service Logon Failure"}, 
+		{16, "Service Marked For Deletion"},
+		{17, "Service No Thread"},
+		{18, "Status Circular Dependency"},
+		{19, "Status Duplicate Name"},
+		{20, "Status Invalid Name"},
+		{21, "Status Invalid Parameter"},
+		{22, "Status Invalid Service Account"},
+		{23, "Status Service Exists"},
+		{24, "Service Already Paused"},
+	});
 	
 	/**
 	 * Constructor for services class
@@ -59,6 +57,7 @@ public class Services {
 	 */
 	public Services(Session session) {
 		this.session = session;
+		this.query = new Query(this.session);
 	}
 	
 	/**
@@ -68,7 +67,7 @@ public class Services {
 	 * @throws JIException 
 	 */
 	public String[] startService(String serviceName) throws JIException {
-		return this.reportStatus(this.service(serviceName, "StartService"));
+		return this.status_codes.reportStatus(this.service(serviceName, "StartService"));
 	}
 	
 	/**
@@ -78,7 +77,7 @@ public class Services {
 	 * @throws JIException 
 	 */
 	public String[] stopService(String serviceName) throws JIException {
-		return this.reportStatus(this.service(serviceName, "StopService"));
+		return this.status_codes.reportStatus(this.service(serviceName, "StopService"));
 	}
 	
 	/**
@@ -88,7 +87,7 @@ public class Services {
 	 * @throws JIException 
 	 */
 	public String[] getStatus(String serviceName) throws JIException {
-		return this.reportStatus(this.service(serviceName, "InterrogateService"), false);
+		return this.status_codes.reportStatus(this.service(serviceName, "InterrogateService"), false);
 	}
 	
 	/**
@@ -100,7 +99,8 @@ public class Services {
 	 */
 	private Integer[] service(String serviceName, String action) throws JIException {
 		// Query the machine for instances of the given service name
-		JIVariant[] queryResults = this.queryServices(serviceName);
+		String queryStr = "SELECT * FROM Win32_Service WHERE Caption='" + serviceName + "'";
+		JIVariant[] queryResults = this.query.query(queryStr);
 		
 		// Create an array for storing status information
 		Integer[] status = new Integer[queryResults.length];
@@ -117,75 +117,4 @@ public class Services {
 
 		return status;
 	}
-	
-	/**
-	 * Get a list of services matching the requested name
-	 * 
-	 * @param serviceName name of the service to query
-	 * @throws JIException 
-	 */
-	private JIVariant[] queryServices(String serviceName) throws JIException {
-		// Get a dispatcher for communicating with the services interface
-		IJIDispatch wbemServices = this.session.getDispatch();
-		
-		// Query options
-		Object[] params = this.formatQuery(serviceName);
-		
-		JIVariant[] servicesSet = wbemServices.callMethodA("ExecQuery", params);
-		IJIDispatch wbemObjectSet = (IJIDispatch)narrowObject(servicesSet[0].getObjectAsComObject());
-
-		JIVariant newEnumVariant = wbemObjectSet.get("_NewEnum");
-		IJIComObject enumComObject = newEnumVariant.getObjectAsComObject();
-		IJIEnumVariant enumVariant = (IJIEnumVariant)narrowObject(enumComObject.queryInterface(IJIEnumVariant.IID));
-		
-		Object[] elements = enumVariant.next(1);
-		JIArray jiArray = (JIArray)elements[0];
-		
-		JIVariant[] array = (JIVariant[])jiArray.getArrayInstance();
-		return array;
-	}
-	
-	/**
-	 * Format WMI query arguments
-	 * 
-	 * @param serviceName name of the service to interact with
-	 */
-	private Object[] formatQuery(String serviceName) {
-		// Build up query string.
-		JIString query = new JIString(
-			"SELECT * FROM Win32_Service WHERE Caption='" + serviceName + "'");
-
-		// Construct params array
-		Object[] params = new Object[] {
-			query,
-			JIVariant.OPTIONAL_PARAM(),
-			new JIVariant(new Integer(this.RETURN_IMMEDIATE + this.FORWARD_ONLY)),
-		};
-
-		return params;
-	}
-	
-	/**
-	 * Report status
-	 * 
-	 * @param onlyErrors only report actions that failed
-	 */
-	 private String[] reportStatus(Integer[] status, boolean onlyErrors) {
-		 String[] results = new String[status.length];
-		 for (int i=0; i<status.length; i++) {
-			 if (onlyErrors && status[i] == 0) {
-				 results[i] = null;
-				 continue;
-			 }
-			 results[i] = this.status_strings[status[i]];
-		 }
-		 return results;
-	 }
-	 
-	 /**
-	  * Report status
-	  */
-	 private String[] reportStatus(Integer[] status) {
-		 return this.reportStatus(status, true);
-	 }
 }
