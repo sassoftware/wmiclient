@@ -94,13 +94,21 @@ public class WMIClientCmd {
 				e.printStackTrace();
 				System.exit(1);
 			}
+		} else if (remaining[0].equals("process")) {
+			try {
+				processCmd(system, Utils.slice(remaining, 1));
+			} catch (JIException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.exit(1);
+			}
 		} else {
 			printUsage("Sub command not found: " + remaining[0]);
 		}
 		
 		System.exit(0);
 	}
-	
+
 	/**
 	 * Parse arguments
 	 * 
@@ -176,8 +184,9 @@ public class WMIClientCmd {
 		System.out.println("    service start <serviceName>");
 		System.out.println("    service stop <serviceName>");
 		System.out.println("    service getstatus <servicename>");
-		//System.out.println("    fs get <filePath>");
-		//System.out.println("    fs set <filePath>");
+		System.out.println("    process create <command>");
+		System.out.println("    process kill <pid>");
+		System.out.println("    process status <pid>");
 		
 		if (msg != null) {
 			System.out.println();
@@ -266,6 +275,45 @@ public class WMIClientCmd {
 			for (String state : status) {
 				if (state != null)
 					System.out.println(state);
+			}
+		}
+	}
+
+	/**
+	 * Handle the process sub command.
+	 * @throws JIException 
+	 */
+	private static void processCmd(ManagedSystem system, String[] args) throws JIException {
+		if (args.length == 0)
+			printUsage("process <create|kill|status>");
+		
+		// Parse process command line
+		String[] options = Utils.slice(args, 1);
+		String action = args[0].toLowerCase();
+		if (action.equals("create")) {
+			if (options.length == 0)
+				printUsage("process create <command>");
+		} else if (action.equals("kill") || action.equals("status")) {
+			if (options.length != 1) {
+				printUsage("process <kill|status> <pid>");
+			}
+		} else {
+			printUsage("proces <create|kill|status>");
+		}
+		
+		// Execute process command
+		if (action.equals("create")) {
+			int pid = system.processes.create(options);
+			System.out.println(pid);
+		} else if (action.equals("kill")) {
+			system.processes.kill(Integer.parseInt(options[0]));
+		} else if (action.equals("status")) {
+			String[] status = system.processes.status(Integer.parseInt(options[0]));
+			if (status != null) {
+				for (String state : status) {
+					if (state != null)
+						System.out.println(state);
+				}
 			}
 		}
 	}

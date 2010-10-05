@@ -19,6 +19,7 @@ public class ManagedSystem {
 	
 	public Registry registry = null;
 	public Services services = null;
+	public Processes processes = null;
 	
 	/**
 	 * Constructor for the creation of system connections.
@@ -42,5 +43,8 @@ public class ManagedSystem {
 
 		// Services instance for interacting with services on the client machine.
 		this.services = new Services(this.session);
+		
+		// Processes instance for interacting with the processes on the client machine.
+		this.processes = new Processes(this.session);
 	}
 }
