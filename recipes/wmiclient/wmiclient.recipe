@@ -6,22 +6,18 @@ class WMIClient(PackageRecipe):
     name = 'wmiclient'
     version = '1.0'
 
-    buildRequires = ['ant:runtime', 'sun-jdk:runtime', 'sun-jdk:java',
-        'sun-jdk:lib', 'sun-jre' ]
+    buildRequires = ['ant:runtime', 'sun-jdk:runtime', ]
 
     def setup(r):
         r.macros.antcmd = 'ant'
-        r.macros.wmicdir = '%(datadir)s/wmiclient/'
+        r.macros.wmicdir = '%(datadir)s/wmiclient'
 
         r.addMercurialSnapshot('http://scc.eng.rpath.com/products/buildtools/trunk/wmiclient')
 
         r.addSource('wmic.sh', dest='%(bindir)s/wmic', mode=0755, macros=True)
 
         r.Ant('dist')
-        r.Install('dist/lib/*', '%(wmicdir)s')
+        r.Install('dist/lib/*', '%(wmicdir)s/')
 
         r.Requires(exceptDeps='java:.*')
-
-        r.Requires('sun-jre:runtime', '%(wmicdir)s/*')
-        r.Requires('sun-jre:lib', '%(wmicdir)s/*')
-        r.Requires('sun-jre:java', '%(wmicdir)s/*')
+        r.Requires('sun-jre:runtime', r.glob('%(wmicdir)s/*'))
