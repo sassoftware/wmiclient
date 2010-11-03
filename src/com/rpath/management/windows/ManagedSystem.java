@@ -20,7 +20,8 @@ public class ManagedSystem {
 	public Registry registry = null;
 	public Services services = null;
 	public Processes processes = null;
-	
+	public Query query = null;
+
 	/**
 	 * Constructor for the creation of system connections.
 	 * 
@@ -46,5 +47,9 @@ public class ManagedSystem {
 		
 		// Processes instance for interacting with the processes on the client machine.
 		this.processes = new Processes(this.session);
+
+		// Query instance for querying the client machine via WQL
+		this.query = new Query(this.session);
+		
 	}
 }

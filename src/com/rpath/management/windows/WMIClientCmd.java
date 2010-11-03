@@ -16,6 +16,12 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.jinterop.dcom.common.JIException;
+import org.jinterop.dcom.core.JIVariant;
+import org.jinterop.dcom.core.JIArray;
+import org.jinterop.dcom.core.IJIComObject;
+import org.jinterop.dcom.impls.automation.IJIDispatch;
+
+import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
 /**
  * @author Elliot Peele <elliot@rpath.com>
@@ -102,6 +108,14 @@ public class WMIClientCmd {
 				e.printStackTrace();
 				System.exit(1);
 			}
+		} else if (remaining[0].equals("query")) {
+			try {
+				queryCmd(system, Utils.slice(remaining, 1));
+			} catch (JIException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.exit(1);
+			}
 		} else {
 			printUsage("Sub command not found: " + remaining[0]);
 		}
@@ -180,13 +194,14 @@ public class WMIClientCmd {
 		System.out.println("Actions:");
 		System.out.println("    registry getkey <keyPath> <key>");
 		System.out.println("    registry setkey <keyPath> <key> <value>");
-		System.out.println("    registry cratekey <keyPath> <key>");
+		System.out.println("    registry createkey <keyPath> <key>");
 		System.out.println("    service start <serviceName>");
 		System.out.println("    service stop <serviceName>");
 		System.out.println("    service getstatus <servicename>");
 		System.out.println("    process create <command>");
 		System.out.println("    process kill <pid>");
 		System.out.println("    process status <pid>");
+		System.out.println("    query network");
 		
 		if (msg != null) {
 			System.out.println();
@@ -298,7 +313,7 @@ public class WMIClientCmd {
 				printUsage("process <kill|status> <pid>");
 			}
 		} else {
-			printUsage("proces <create|kill|status>");
+			printUsage("process <create|kill|status>");
 		}
 		
 		// Execute process command
@@ -317,4 +332,48 @@ public class WMIClientCmd {
 			}
 		}
 	}
+
+	/**
+	 * Handle the query sub command.
+	 * @throws JIException 
+	 */
+	private static void queryCmd(ManagedSystem system, String[] args) throws JIException {
+		if (args.length != 1)
+			printUsage("query network");
+		
+		// Execute process command
+		if (args[0].equals("network")) {
+		
+			JIVariant[] queryResults = system.query.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
+		
+			for (int i=0; i<queryResults.length; i++) {
+				IJIComObject obj = queryResults[i].getObjectAsComObject();
+				IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
+				
+				JIArray jiAddr = dispatch.get("IPAddress").getObjectAsArray();
+				JIVariant[] addr = (JIVariant[])jiAddr.getArrayInstance();
+				JIArray jiSubnet = dispatch.get("IPSubnet").getObjectAsArray();
+				JIVariant[] subnet = (JIVariant[])jiSubnet.getArrayInstance();
+				Boolean IPEnabled = dispatch.get("IPEnabled").getObjectAsBoolean();
+				String hostName = dispatch.get("DNSHostName").getObjectAsString2();
+				String domain = dispatch.get("DNSDomain").getObjectAsString2();
+				int index = dispatch.get("InterfaceIndex").getObjectAsInt();
+				
+				for (int j=0; j<addr.length; j++) {
+					System.out.println(
+							index + ", "
+							+ addr[j].getObjectAsString2() + ", " 
+							+ subnet[j].getObjectAsString2() + ", " 
+							+ IPEnabled + ", "
+							+ hostName + ", " 
+							+ domain
+							);
+				}
+			}
+		} else {
+			printUsage("query network");
+		}
+	}
 }
+
+	

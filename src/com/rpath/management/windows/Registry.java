@@ -69,7 +69,7 @@ public class Registry {
 	 * @throws UnknownHostException 
 	 */
 	public String[] getKey(String keyPath, String key) throws UnknownHostException, JIException {
-		return this.getKey(keyPath, key, 2048);
+		return this.getKey(keyPath, key, 2*1024*1024);
 	}
 
 	/**
@@ -82,21 +82,39 @@ public class Registry {
 	 * @throws UnknownHostException 
 	 */
 	public void setKey(String keyPath, String key, String[] values) throws UnknownHostException, JIException {
-		// Convert values to a byte array
-		byte[][] data = new byte[values.length][];
-		for (int i=0; i<values.length; i++) {
-			data[i] = values[i].getBytes();
-		}
-
 		// Get a handle for talking to the registry
 		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
 		
 		// Get an instance of the key to modify
 		JIPolicyHandle regkey = handle.openKey(keyPath);
-		
-		// Set the value
-		handle.registry.winreg_SetValue(regkey, key, data);
 
+		// Read the key to get the type
+		Object[] oldData = handle.registry.winreg_QueryValue(regkey, key, 2*1024*1024);
+		Integer dtype = (Integer)oldData[0];
+
+		// Create and set the new data
+		if (dtype == IJIWinReg.REG_DWORD) {
+			int regData = Integer.parseInt(values[0]);
+			handle.registry.winreg_SetValue(regkey, key, regData);			
+		} else if (dtype == IJIWinReg.REG_SZ || dtype == IJIWinReg.REG_EXPAND_SZ) {
+			byte[] regData = values[0].getBytes();
+			handle.registry.winreg_SetValue(regkey, key, regData, false, dtype == IJIWinReg.REG_EXPAND_SZ);			
+		} else if (dtype == IJIWinReg.REG_BINARY) {
+			byte[] regData = new byte[values.length];
+			for (int i=0; i<values.length; i++) { 
+				String bs = values[i].substring(2); // ignore the 0x when we convert it to a byte
+				regData[i] =  (byte)(Integer.parseInt(bs, 16));
+			}
+			handle.registry.winreg_SetValue(regkey, key, regData, true, false);			
+		} else {
+			// It must be a REG_MULTI_SZ
+			byte[][] regData = new byte[values.length][];
+			for (int i=0; i<values.length; i++) {
+				regData[i] = values[i].getBytes();
+			}
+			handle.registry.winreg_SetValue(regkey, key, regData);			
+		}
+		
 		// Tear down connection
 		handle.closeConnection();
 	}
@@ -125,6 +143,30 @@ public class Registry {
 	}
 	
 	/**
+	 *  Helper function to convert a byte array to an int using 4 bytes
+	 * @param arr the byte array
+	 * @param start the index to start at
+	 * @return
+	 */
+	public static int arr2int(byte[] arr, int start) {
+		int i = 0;
+		int len = 4;
+		int cnt = 0;
+		byte[] tmp = new byte[len];
+		for (i = start; i < (start + len); i++) {
+			tmp[cnt] = arr[i];
+			cnt++;
+		}
+		int accum = 0;
+		i = 0;
+		for ( int shiftBy = 0; shiftBy < 32; shiftBy += 8 ) {
+			accum |= ( (long)( tmp[i] & 0xff ) ) << shiftBy;
+			i++;
+		}
+		return accum;
+	}
+
+	/**
 	 * Format the output from a get request.
 	 * 
 	 * @param data return from winreg_QueryValue
@@ -136,11 +178,22 @@ public class Registry {
 		Integer dtype = (Integer)data[0];
 
 		// Handle simple non-list type
-		if (dtype != IJIWinReg.REG_MULTI_SZ) {
-			output = new String[]{ new String((byte [])data[1]), };
+		if (dtype == IJIWinReg.REG_SZ || dtype == IJIWinReg.REG_EXPAND_SZ) {
+			String s = new String((byte[])data[1]);
+			output = new String[]{s, };
 			return output;
-		}
-		
+		} else if (dtype == IJIWinReg.REG_BINARY) {
+			byte[] b = ((byte[])data[1]);
+			output = new String[b.length];
+			for (int i=0; i<b.length; i++) 
+				output[i] = "0x" + Integer.toHexString(b[i]);
+			return output;
+		} else if (dtype == IJIWinReg.REG_DWORD) {
+			int i = arr2int((byte[])(data[1]), 0);
+			String s = Integer.toString(i);
+			output = new String[]{s, };
+			return output;
+		}	
 		// And now for the more complex results
 		byte[][] lines = (byte[][])data[1];
 		
