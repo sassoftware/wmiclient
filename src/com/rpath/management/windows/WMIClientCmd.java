@@ -338,12 +338,12 @@ public class WMIClientCmd {
 	 * @throws JIException 
 	 */
 	private static void queryCmd(ManagedSystem system, String[] args) throws JIException {
+		String usageStr = "query network|uuid";
 		if (args.length != 1)
-			printUsage("query network");
+			printUsage(usageStr);
 		
 		// Execute process command
 		if (args[0].equals("network")) {
-		
 			JIVariant[] queryResults = system.query.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
 		
 			for (int i=0; i<queryResults.length; i++) {
@@ -370,8 +370,16 @@ public class WMIClientCmd {
 							);
 				}
 			}
+		} else if (args[0].equals("uuid")) {
+			JIVariant[] queryResults = system.query.query("SELECT * FROM Win32_ComputerSystemProduct");
+		
+			IJIComObject obj = queryResults[0].getObjectAsComObject();
+			IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
+				
+			String uuid = dispatch.get("UUID").getObjectAsString2();
+			System.out.println(uuid);
 		} else {
-			printUsage("query network");
+			printUsage(usageStr);
 		}
 	}
 }
