@@ -5,6 +5,9 @@ package com.rpath.management.windows;
 
 import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.IJIComObject;
 import org.jinterop.dcom.core.JIArray;
@@ -32,7 +35,7 @@ public class Query {
 		this.session = session;
 	}
 	
-	public JIVariant[] query(String queryString) throws JIException {
+	public ArrayList<JIVariant> query(String queryString) throws JIException {
 		// Get a dispatcher for communicating with the services interface
 		IJIDispatch dispatch = this.session.getDispatch();
 		
@@ -44,16 +47,24 @@ public class Query {
 		};
 		
 		JIVariant[] resultSet = dispatch.callMethodA("ExecQuery", params);
+
 		IJIDispatch wbemObjectSet = (IJIDispatch)narrowObject(resultSet[0].getObjectAsComObject());
 
 		JIVariant newEnumVariant = wbemObjectSet.get("_NewEnum");
 		IJIComObject enumComObject = newEnumVariant.getObjectAsComObject();
 		IJIEnumVariant enumVariant = (IJIEnumVariant)narrowObject(enumComObject.queryInterface(IJIEnumVariant.IID));
 		
-		Object[] elements = enumVariant.next(1);
-		JIArray jiArray = (JIArray)elements[0];
-		
-		JIVariant[] array = (JIVariant[])jiArray.getArrayInstance();
-		return array;		
+		ArrayList<JIVariant> ret = new ArrayList<JIVariant>();
+		try {
+			while(true) {
+				Object[] elements = enumVariant.next(1);
+				JIArray jiArray = (JIArray)elements[0];
+				JIVariant[] array = (JIVariant[])jiArray.getArrayInstance();
+				ret.addAll(Arrays.asList(array));
+			}
+		} catch (JIException e) {
+			// ignore this exception, iterator is done.
+		}
+		return ret;		
 	}
 }

@@ -119,6 +119,6 @@ public class Processes {
 	 */
 	private JIVariant[] queryPid(int pid) throws JIException {
 		String queryStr = "Select * From Win32_ProcessStopTrace where ProcessID=" + pid;
-		return this.query.query(queryStr);
+		return (JIVariant[])this.query.query(queryStr).toArray();
 	}
 }

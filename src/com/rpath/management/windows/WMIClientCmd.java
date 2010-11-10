@@ -1,10 +1,11 @@
-/**
+ 	/**
  * Copyright (c) 2010 rPath, Inc. 
  */
 package com.rpath.management.windows;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 import org.apache.commons.cli.CommandLine;
@@ -70,54 +71,26 @@ public class WMIClientCmd {
 		
 		try {
 			system = new ManagedSystem(host, domain, user, password);
+
+			if (remaining[0].equals("registry")) {
+				registryCmd(system, Utils.slice(remaining, 1));
+			} else if (remaining[0].equals("service")) {
+				serviceCmd(system, Utils.slice(remaining, 1));
+			} else if (remaining[0].equals("process")) {
+				processCmd(system, Utils.slice(remaining, 1));
+			} else if (remaining[0].equals("query")) {
+				queryCmd(system, Utils.slice(remaining, 1));
+			} else {
+				printUsage("Sub command not found: " + remaining[0]);
+			}
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
 			e.printStackTrace();
 			System.exit(1);
 		} catch (JIException e) {
-			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
 			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		if (remaining[0].equals("registry")) {
-			try {
-				registryCmd(system, Utils.slice(remaining, 1));
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			} catch (JIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			}
-		} else if (remaining[0].equals("service")) {
-			try {
-				serviceCmd(system, Utils.slice(remaining, 1));
-			} catch (JIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			}
-		} else if (remaining[0].equals("process")) {
-			try {
-				processCmd(system, Utils.slice(remaining, 1));
-			} catch (JIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			}
-		} else if (remaining[0].equals("query")) {
-			try {
-				queryCmd(system, Utils.slice(remaining, 1));
-			} catch (JIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.exit(1);
-			}
-		} else {
-			printUsage("Sub command not found: " + remaining[0]);
+			System.exit(e.getErrorCode());
 		}
 		
 		System.exit(0);
@@ -202,6 +175,7 @@ public class WMIClientCmd {
 		System.out.println("    process kill <pid>");
 		System.out.println("    process status <pid>");
 		System.out.println("    query network");
+		System.out.println("    query uuid");
 		
 		if (msg != null) {
 			System.out.println();
@@ -344,36 +318,41 @@ public class WMIClientCmd {
 		
 		// Execute process command
 		if (args[0].equals("network")) {
-			JIVariant[] queryResults = system.query.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
+			ArrayList<JIVariant> queryResults = system.query.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
 		
-			for (int i=0; i<queryResults.length; i++) {
-				IJIComObject obj = queryResults[i].getObjectAsComObject();
+			for (int i=0; i<queryResults.size(); i++) {
+				IJIComObject obj = queryResults.get(i).getObjectAsComObject();
 				IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
+
+				Boolean IPEnabled = dispatch.get("IPEnabled").getObjectAsBoolean();
+				if (IPEnabled==false) {
+					continue;
+				}
+
+				int index = dispatch.get("InterfaceIndex").getObjectAsInt();
+				String hostName = dispatch.get("DNSHostName").getObjectAsString2();
+				String domain = dispatch.get("DNSDomain").getObjectAsString2();
 				
 				JIArray jiAddr = dispatch.get("IPAddress").getObjectAsArray();
 				JIVariant[] addr = (JIVariant[])jiAddr.getArrayInstance();
+
 				JIArray jiSubnet = dispatch.get("IPSubnet").getObjectAsArray();
 				JIVariant[] subnet = (JIVariant[])jiSubnet.getArrayInstance();
-				Boolean IPEnabled = dispatch.get("IPEnabled").getObjectAsBoolean();
-				String hostName = dispatch.get("DNSHostName").getObjectAsString2();
-				String domain = dispatch.get("DNSDomain").getObjectAsString2();
-				int index = dispatch.get("InterfaceIndex").getObjectAsInt();
 				
 				for (int j=0; j<addr.length; j++) {
 					System.out.println(
 							index + ", "
 							+ addr[j].getObjectAsString2() + ", " 
 							+ subnet[j].getObjectAsString2() + ", " 
-							+ IPEnabled + ", "
 							+ hostName + ", " 
 							+ domain
 							);
 				}
 			}
 		} else if (args[0].equals("uuid")) {
-			JIVariant[] queryResults = system.query.query("SELECT * FROM Win32_ComputerSystemProduct");
+			ArrayList<JIVariant> queryResults = system.query.query("SELECT * FROM Win32_ComputerSystemProduct");
 		
-			IJIComObject obj = queryResults[0].getObjectAsComObject();
+			IJIComObject obj = queryResults.get(0).getObjectAsComObject();
 			IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
 				
 			String uuid = dispatch.get("UUID").getObjectAsString2();

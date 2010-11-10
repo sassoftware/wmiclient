@@ -3,6 +3,9 @@
  */
 package com.rpath.management.windows;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.IJIComObject;
 import org.jinterop.dcom.core.JIArray;
@@ -100,13 +103,14 @@ public class Services {
 	private Integer[] service(String serviceName, String action) throws JIException {
 		// Query the machine for instances of the given service name
 		String queryStr = "SELECT * FROM Win32_Service WHERE Caption='" + serviceName + "'";
-		JIVariant[] queryResults = this.query.query(queryStr);
+		ArrayList<JIVariant> queryList = this.query.query(queryStr);
 		
 		// Create an array for storing status information
-		Integer[] status = new Integer[queryResults.length];
+		Integer[] status = new Integer[queryList.size()];
 		
-		for (int i=0; i<queryResults.length; i++) {
-			JIVariant service = queryResults[i];
+		for(int i=0; i<queryList.size();i++) {
+
+			JIVariant service = queryList.get(i);
 			
 			// Get a dispatcher to control the specific service
 			IJIDispatch dispatch = (IJIDispatch)narrowObject(service.getObjectAsComObject());
@@ -114,7 +118,6 @@ public class Services {
 			// Invoke the specified action
 			status[i] = dispatch.callMethodA(action).getObjectAsInt();
 		}
-
 		return status;
 	}
 }
