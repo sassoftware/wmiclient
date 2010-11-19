@@ -330,9 +330,14 @@ public class WMIClientCmd {
 				}
 
 				int index = dispatch.get("InterfaceIndex").getObjectAsInt();
-				String hostName = dispatch.get("DNSHostName").getObjectAsString2();
-				String domain = dispatch.get("DNSDomain").getObjectAsString2();
-				
+				String hostName = " ";
+				try {
+					hostName = dispatch.get("DNSHostName").getObjectAsString2();
+				} catch (Exception e) {}
+				String domain = " ";
+				try {
+					domain = dispatch.get("DNSDomain").getObjectAsString2();
+				} catch (Exception e) {}
 				JIArray jiAddr = dispatch.get("IPAddress").getObjectAsArray();
 				JIVariant[] addr = (JIVariant[])jiAddr.getArrayInstance();
 
