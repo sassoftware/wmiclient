@@ -29,7 +29,7 @@ public class Query {
 
 	/**
 	 * Constructor
-	 * @param session WMI Sesison instance
+	 * @param session WMI Session instance
 	 */
 	public Query(Session session) {
 		this.session = session;
