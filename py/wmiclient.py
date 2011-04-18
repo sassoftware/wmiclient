@@ -13,7 +13,7 @@ class WindowsAuthInfo(namedtuple('WindowsAuthInfo', 'host domain user password')
 
     def __new__(cls, host, domain, user, password):
         host = cls._getIp(host)
-        tuple.__new__(cls, (host, domain, user, password))
+        return tuple.__new__(cls, (host, domain, user, password))
 
     @staticmethod
     def _getIp(host):
@@ -24,6 +24,33 @@ class WindowsAuthInfo(namedtuple('WindowsAuthInfo', 'host domain user password')
         name, _, addressList = socket.gethostbyaddr(host)
         assert len(addressList)
         return addressList[0]
+
+
+class NetworkInterface(namedtuple('NetworkInterface', 'name ip_address '
+    'netmask dns_name required')):
+
+    __slots__ = ()
+
+    @property
+    def cidr(self):
+        if '.' not in self.netmask:
+            return int(self.netmask)
+
+        octets = [int(x) for x in self.netmask.split('.') ]
+        cidr = 0
+        for i in octets:
+            while i:
+                cidr += i & 1
+                i >>= 1
+        return cidr
+
+    @property
+    def isv6(self):
+        return ':' in self.ip_address
+
+    @property
+    def isv4(self):
+        return not self.isv6
 
 
 class WMICallback(object):
@@ -132,8 +159,6 @@ class WMIClient(object):
     Python frontend to the wmiclient command line.
     """
 
-    QuerySleepInterval = 5.0
-
     _ErrorClass = WMIErrorCodes
 
     class _Results(namedtuple('WMICResults', 'host rc stdout stderr')):
@@ -143,6 +168,24 @@ class WMIClient(object):
 
         __slots__ = ()
 
+        @staticmethod
+        def _split(input):
+            output = []
+            for line in input.split('\n'):
+                line = line.strip()
+                if line:
+                    output.append(line)
+            return output
+
+        @property
+        def output(self):
+            return self._split(self.stdout)
+
+        @property
+        def error(self):
+            return self._split(self.stderr)
+
+
     def __init__(self, authInfo, callback=None):
         self._authInfo = authInfo
 
@@ -150,7 +193,7 @@ class WMIClient(object):
             callback = WMICallback(self._authInfo)
         self._cb = callback
 
-        self._errors = WMIErrorCodes()
+        self._errors = self._ErrorClass()
 
         self._wmicCmd = [
             '/usr/bin/wmic',
@@ -213,10 +256,38 @@ class WMIClient(object):
         return self._service('getstatus', service)
 
     def queryNetwork(self):
-        return self._query('network')
+        result = self._query('network')
+
+        net_info = [
+            [ y.strip() for y in x.split(',') ] for x in result.iteroutput()
+        ]
+
+        interfaces = []
+        for name, ipaddr, netmask, hostname, domain in net_info:
+            hostname = hostname.lower()
+
+            if domain:
+                dns_name = '%s.%s' % (hostname, domain)
+            else:
+                dns_name = hostname
+
+            host = self._authInfo.host
+            required = ipaddr == host or dns_name == host
+
+            interfaces.append(NetworkInterface(name, ipaddr, netmask,
+                dns_name, required))
+
+        return result, interfaces
 
     def queryUUID(self):
-        return self._query('uuid')
+        result = self._query('uuid')
+
+        output = result.output
+        count = len(output)
+        if count == 1:
+            return result, output[0]
+        else:
+            raise WMIUnknownError, 'Found incorrect number of uuids'
 
     def registryGetKey(self, keyPath, key, ignoreExceptions=False):
         result = self('registry', 'getkey', keyPath, key)
