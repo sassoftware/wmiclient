@@ -22,6 +22,6 @@ class WMIClient(PackageRecipe):
 
         r.Ant('dist')
         r.Install('dist/lib/*', '%(wmicdir)s/')
-        r.Install('py/wmiclient.py' '%(sitepkgs)s/')
+        r.Install('py/wmiclient.py', '%(sitepkgs)s/')
 
         r.Requires('sun-jre:runtime', '%(bindir)s/wmic')
