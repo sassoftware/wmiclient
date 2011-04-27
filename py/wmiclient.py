@@ -65,6 +65,9 @@ class WMICallback(object):
     def setStatus(self, msg):
         pass
 
+    def debug(self, msg):
+        pass
+
 
 class WMIBaseError(Exception):
     def __init__(self, result, *args, **kwargs):
@@ -212,6 +215,8 @@ class WMIClient(object):
 
         info = self._authInfo._asdict()
         cmd = [ x % info for x in itertools.chain(self._wmicCmd, args) ]
+
+        self._cb.debug('calling: %s' % (cmd, ))
 
         p = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
