@@ -7,13 +7,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.jinterop.dcom.common.JIException;
-import org.jinterop.dcom.core.IJIComObject;
-import org.jinterop.dcom.core.JIArray;
-import org.jinterop.dcom.core.JIString;
 import org.jinterop.dcom.core.JIVariant;
 import org.jinterop.dcom.impls.automation.IJIDispatch;
-import org.jinterop.dcom.impls.automation.IJIEnumVariant;
-
 import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
 /**

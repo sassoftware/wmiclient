@@ -2,6 +2,7 @@
 # Copyright (c) 2010 rPath, Inc.
 #
 
+loadInstalled('python')
 class WMIClient(PackageRecipe):
     name = 'wmiclient'
     version = '1.0'
@@ -10,6 +11,8 @@ class WMIClient(PackageRecipe):
         'sun-jdk:lib', ]
 
     def setup(r):
+        r.macros.sitepkgs = Python.sitepkgs
+
         r.macros.antcmd = 'ant'
         r.macros.wmicdir = '%(datadir)s/wmiclient'
 
@@ -19,5 +22,6 @@ class WMIClient(PackageRecipe):
 
         r.Ant('dist')
         r.Install('dist/lib/*', '%(wmicdir)s/')
+        r.Install('py/wmiclient.py', '%(sitepkgs)s/')
 
         r.Requires('sun-jre:runtime', '%(bindir)s/wmic')
