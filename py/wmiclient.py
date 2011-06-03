@@ -97,9 +97,9 @@ class WMIUnknownError(WMIBaseError):
 
 class WMIErrorCodes(object):
     UNKNOWN = -1
-    ERR_TIMEOUT = 0x100
-    ERR_FILE_NOT_FOUND = 0x200
-    ERR_ACCESS_DENIED = 0x500
+    ERR_TIMEOUT = 1
+    ERR_FILE_NOT_FOUND = 2
+    ERR_ACCESS_DENIED = 5
     ERR_ACCESS_DENIED2 = 0xBD00
     ERR_BAD_CREDENTIALS = 0x6D00
 
