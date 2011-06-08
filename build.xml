@@ -8,7 +8,7 @@
 	<property name="dist" location="dist" />
 	<property name="jars" location="lib" />
 
-	<property name="compile.debug" value="false" />
+	<property name="compile.debug" value="true" />
 	<property name="compile.deprecation" value="false" />
 	<property name="compile.optimize" value="true" />
 

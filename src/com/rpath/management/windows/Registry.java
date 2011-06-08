@@ -89,9 +89,14 @@ public class Registry {
 		JIPolicyHandle regkey = handle.openKey(keyPath);
 
 		// Read the key to get the type
-		Object[] oldData = handle.registry.winreg_QueryValue(regkey, key, 2*1024*1024);
-		Integer dtype = (Integer)oldData[0];
-
+		Integer dtype = new Integer(-1);
+		try {
+			Object[] oldData = handle.registry.winreg_QueryValue(regkey, key, 2*1024*1024);
+			dtype = (Integer)oldData[0];
+		} catch(JIException e) {
+			handle.registry.winreg_SetValue(regkey, key);
+		}
+		
 		// Create and set the new data
 		if (dtype == IJIWinReg.REG_DWORD) {
 			int regData = Integer.parseInt(values[0]);
