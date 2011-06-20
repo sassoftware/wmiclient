@@ -101,7 +101,7 @@ public class WMIClientCmd {
 	 * 
 	 * @param args argument array
 	 */
-	private static CommandLine parseArguments(String[] args) {
+	public static CommandLine parseArguments(String[] args) {
 		CommandLine cmdline = null;
 		CommandLineParser parser = new DefaultParser();
 		Options options = getOptions();
