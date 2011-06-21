@@ -22,6 +22,8 @@ import org.jinterop.dcom.core.JIArray;
 import org.jinterop.dcom.core.IJIComObject;
 import org.jinterop.dcom.impls.automation.IJIDispatch;
 
+import com.rpath.management.windows.streaming.CommandProcessor;
+
 import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
 /**
@@ -57,13 +59,11 @@ public class WMIClientCmd {
 		try {
 			@SuppressWarnings("unused")
 			JILogging log = new JILogging(level);
-		} catch (SecurityException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
 			System.exit(1);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 			System.exit(1);
 		}
 		
@@ -72,7 +72,9 @@ public class WMIClientCmd {
 		try {
 			system = new ManagedSystem(host, domain, user, password);
 
-			if (remaining[0].equals("registry")) {
+			if (cmdline.hasOption("interactive")) {
+				interactiveCmd(system);
+			} else if (remaining[0].equals("registry")) {
 				registryCmd(system, Utils.slice(remaining, 1));
 			} else if (remaining[0].equals("service")) {
 				serviceCmd(system, Utils.slice(remaining, 1));
@@ -91,6 +93,10 @@ public class WMIClientCmd {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 			System.exit(e.getErrorCode());
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+			System.exit(1);
 		}
 		
 		System.exit(0);
@@ -129,6 +135,7 @@ public class WMIClientCmd {
 		Option help = OptionBuilder.withLongOpt("help").withDescription("print this message").create();
 		Option verbose = OptionBuilder.withLongOpt("verbose").withDescription("be more verbose").create();
 		Option debug = OptionBuilder.withLongOpt("debug").withDescription("print debugging information").create();
+		Option interactive = OptionBuilder.withLongOpt("interactive").withDescription("run in interactive mode").create();
 		
 		Option host = OptionBuilder.withLongOpt("host").withArgName("hostname or IP").hasArg().withDescription("hostname or IP address to connect to").isRequired().create();
 		Option domain = OptionBuilder.withLongOpt("domain").withArgName("authentication domain").hasArg().withDescription("authentication domain").isRequired().create();
@@ -138,6 +145,7 @@ public class WMIClientCmd {
 		options.addOption(help);
 		options.addOption(verbose);
 		options.addOption(debug);
+		options.addOption(interactive);
 		options.addOption(host);
 		options.addOption(domain);
 		options.addOption(user);
@@ -188,6 +196,15 @@ public class WMIClientCmd {
 	/*
 	 * Start command functions.
 	 */
+	
+	/**
+	 * Start an interactive session.
+	 * @throws IOException 
+	 */
+	private static void interactiveCmd(ManagedSystem system) throws IOException {
+		CommandProcessor processor = new CommandProcessor(system, System.in, System.out, System.err);
+		processor.run();
+	}
 	
 	/**
 	 * Handle the registry sub command.

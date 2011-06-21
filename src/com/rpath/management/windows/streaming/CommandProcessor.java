@@ -30,7 +30,6 @@ public class CommandProcessor extends IPC {
 			this.handleQueryCommand();
 		else
 			this.reportError("invalid command " + cmd);
-		this.reset();
 	}
 
 	private void handleRegistryCommand() {
@@ -54,7 +53,7 @@ public class CommandProcessor extends IPC {
 			this.reportError("getkey failed");
 			return;
 		} catch (JIException e) {
-			this.reportError("getkey failed");
+			this.reportError(e.getErrorCode());
 			return;
 		}
 		
@@ -72,7 +71,7 @@ public class CommandProcessor extends IPC {
 			this.reportError("setkey failed");
 			return;
 		} catch (JIException e) {
-			this.reportError("setkey failed");
+			this.reportError(e.getErrorCode());
 			return;
 		}
 		
@@ -88,7 +87,7 @@ public class CommandProcessor extends IPC {
 			this.reportError("createkey failed");
 			return;
 		} catch (JIException e) {
-			this.reportError("createkey failed");
+			this.reportError(e.getErrorCode());
 			return;			
 		}
 		

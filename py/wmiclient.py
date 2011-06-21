@@ -2,6 +2,7 @@
 # Copyright (c) 2011 rPath, Inc.
 #
 
+import sys
 import time
 import socket
 import itertools
@@ -157,6 +158,162 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
         return errorCls(result, message)
 
 
+class WMICResults(namedtuple('WMICResults', 'host rc stdout stderr')):
+    """
+    Class for storing WMI Client results.
+    """
+
+    __slots__ = ()
+
+    @staticmethod
+    def _split(input):
+        output = []
+        for line in input.split('\n'):
+            line = line.strip()
+            if line:
+                output.append(line)
+        return output
+
+    @property
+    def output(self):
+        return self._split(self.stdout)
+
+    @property
+    def error(self):
+        return self._split(self.stderr)
+
+
+class AbstractCommand(object):
+    _wmicCmd = (
+        '/usr/bin/wmic',
+        '--host', '%(host)s',
+        '--user', '%(user)s',
+        '--password', '%(password)s',
+        '--domain', '%(domain)s'
+    )
+
+    def __init__(self, authInfo, callback):
+        self._authInfo = authInfo
+        self._callback = callback
+
+    def execute(self, *args):
+
+        """
+        Call the WMI Client with the specified arguments and the default set of
+        authentication related informaiton.
+        @return WMICResults(rc, stdout, stderr)
+        """
+
+        self._run(args)
+        rc, output, error = self._parseOutput()
+
+        return WMICResults(self._authInfo.host, rc, output, error)
+
+    def _run(self, args):
+        raise NotImplementedError
+
+    def _parseOutput(self):
+        raise NotImplementedError
+
+
+class DefaultCommand(AbstractCommand):
+    """
+    Class for running wmic.
+    """
+
+    def _run(self, *args):
+        info = self._authInfo._asdict()
+        cmd = [ x % info for x in itertools.chain(self._wmicCmd, args) ]
+
+        self._callback.debug('calling: %s' % (cmd, ))
+
+        self._p = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        self._rc = None
+        while True:
+            self._rc = self._p.poll()
+            if self._rc is not None:
+                break
+
+            self._callback.setStatus('Waiting for reponse from remote Windows server')
+            time.sleep(1)
+
+        if self._rc is not None and self._rc == 0:
+            self._callback.setStatus('WMI call completed successfully')
+        else:
+            self._callback.setStatus('Error in WMI call')
+
+    def _parseOutput(self):
+        return self._rc, self._p.stdout.read(), self._p.stderr.read()
+
+
+class InteractiveCommand(AbstractCommand):
+    """
+    Class for communicating with the interactive version of wmic.
+    """
+
+    _MARKER = '= '
+    _ERROR = '= ERROR'
+    _START_OUTPUT = '= START OUTPUT'
+    _END_OUTPUT = '= END OUTPUT'
+
+    def __init__(self, *args, **kwargs):
+        AbstractCommand.__init__(self, *args, **kwargs)
+
+        self._wmicCmd = self._wmicCmd + ('--interactive', )
+
+        self._p = None
+
+    def _createProcess(self):
+        if not self._p:
+            info = self._authInfo._asdict()
+            cmd = [ x % info for x in self._wmicCmd ]
+
+            self._callback.debug('calling: %s' % (cmd, ))
+
+            self._p = subprocess.Popen(cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=sys.stderr)
+
+    def _write(self, data):
+        self._p.stdin.write(data)
+
+    def _readline(self):
+        return self._p.stdout.readline().strip()
+
+    def _run(self, args):
+        for arg in args:
+            self._write('"%s" ' % arg)
+        self._write('\n')
+
+    def _parseOutput(self):
+        line = self._readline()
+        assert line.startswith(self._MARKER)
+
+        output = []
+        error = None
+        if line.startswith(self._ERROR):
+            error = line[len(self._ERROR):]
+            if error[0].isdigit():
+                rc = error[0]
+            else:
+                rc = -1
+        elif line.startswith(self._START_OUTPUT):
+            rc = int(line[len(self._START_OUTPUT):])
+
+            line = self._process.stdout.readline().strip()
+            while not line.startswith(self._MARKER):
+                output.append(line)
+                line = self._process.stdout.readline().strip()
+            assert line == self._END_OUTPUT
+
+        return rc, output, error
+
+
+
 class WMIClient(object):
     """
     Python frontend to the wmiclient command line.
@@ -164,83 +321,22 @@ class WMIClient(object):
 
     _ErrorClass = WMIErrorCodes
 
-    class _Results(namedtuple('WMICResults', 'host rc stdout stderr')):
-        """
-        Class for storing WMI Client results.
-        """
-
-        __slots__ = ()
-
-        @staticmethod
-        def _split(input):
-            output = []
-            for line in input.split('\n'):
-                line = line.strip()
-                if line:
-                    output.append(line)
-            return output
-
-        @property
-        def output(self):
-            return self._split(self.stdout)
-
-        @property
-        def error(self):
-            return self._split(self.stderr)
-
-
-    def __init__(self, authInfo, callback=None):
+    def __init__(self, authInfo, callback=None, interactive=True):
         self._authInfo = authInfo
 
         if callback is None:
             callback = WMICallback(self._authInfo)
-        self._cb = callback
+        self._callback = callback
+
+        if interactive:
+            self._cmd = InteractiveCommand(self._authInfo, self._callback)
+        else:
+            self._cmd = DefaultCommand(self._authInfo, self._callback)
 
         self._errors = self._ErrorClass()
 
-        self._wmicCmd = [
-            '/usr/bin/wmic',
-            '--host', '%(host)s',
-            '--user', '%(user)s',
-            '--password', '%(password)s',
-            '--domain', '%(domain)s',
-        ]
-
-    def __call__(self, *args):
-        """
-        Call the WMI Client with the specified arguments and the default set of
-        authentication related informaiton.
-        @return WMICResults(rc, stdout, stderr)
-        """
-
-        info = self._authInfo._asdict()
-        cmd = [ x % info for x in itertools.chain(self._wmicCmd, args) ]
-
-        self._cb.debug('calling: %s' % (cmd, ))
-
-        p = subprocess.Popen(cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-
-        rc = None
-        while True:
-            rc = p.poll()
-            if rc is not None:
-                break
-
-            self._cb.setStatus('Waiting for reponse from remote Windows server')
-            time.sleep(1)
-
-        if rc is not None and rc == 0:
-            self._cb.setStatus('WMI call completed successfully')
-        else:
-            self._cb.setStatus('Error in WMI call')
-
-        return self._Results(self._authInfo.host, rc,
-            p.stdout.read(), p.stderr.read())
-
     def _request(self, *args):
-        result = self(*args)
+        result = self._cmd.execute(*args)
         if result.rc:
             raise self._errors.get(result)
         return result
@@ -295,7 +391,7 @@ class WMIClient(object):
             raise WMIUnknownError, 'Found incorrect number of uuids'
 
     def registryGetKey(self, keyPath, key, ignoreExceptions=False):
-        result = self('registry', 'getkey', keyPath, key)
+        result = self._cmd.execute('registry', 'getkey', keyPath, key)
 
         if result.rc and not ignoreExceptions:
             raise self._errors.get(result)

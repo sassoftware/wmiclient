@@ -14,7 +14,12 @@ import java.io.StreamTokenizer;
 public abstract class IPC {
 	private static final String MARKER = "= ";
 	private static final int COMMAND_SIZE = 10;
-	private int pos = 0;
+	private static final byte QUOTE = (byte)'"';
+	private static final byte SPACE = (byte)' ';
+	private static final byte NEWLINE = (byte)'\n';
+	
+	private int pos;
+	private boolean inQuotedString;
 	
 	private StreamTokenizer in;
 	private PrintStream out;
@@ -29,29 +34,61 @@ public abstract class IPC {
 		
 		Reader r = new BufferedReader(new InputStreamReader(input));
 		this.in = new StreamTokenizer(r);
+		this.in.resetSyntax();
 		this.in.eolIsSignificant(true);
 	}
 	
 	public void run() throws IOException {
+		this.command[this.pos] = new String();
 		while (this.in.nextToken() != StreamTokenizer.TT_EOF) {
+			//System.err.println("state: " + (char)this.in.ttype + "(" + this.in.ttype + ")");
 			switch(this.in.ttype) {
-				case StreamTokenizer.TT_EOL: this.processCommand();
-				case StreamTokenizer.TT_NUMBER: this.appendNumber();
-				case StreamTokenizer.TT_WORD: this.appendWord();
+				case IPC.SPACE:
+					this.handleSpace();
+					break;
+				case IPC.QUOTE:
+					this.handleQuote();
+					break;
+				case IPC.NEWLINE:
+					this.printCommand();
+					this.processCommand();
+					this.reset();
+					break;
+				default:
+					this.append();
 			}
 		}
+		
 	}
 
-	private void appendNumber() {
-		this.command[this.pos++] = Integer.toString((int)this.in.nval);
+	private void append() {
+		byte b = (byte)this.in.ttype;
+		byte [] ba = {b, };
+		String s = new String(ba);
+		
+		this.command[this.pos] = this.command[this.pos].concat(s); 
 	}
 	
-	private void appendWord() {
-		this.command[this.pos++] = new String(this.in.sval);
+	private void handleSpace() {
+		if (!this.inQuotedString) {
+			this.pos++;
+			this.command[this.pos] = new String(); 
+		} else {
+			this.append();
+		}
 	}
 	
+	private void handleQuote() {
+		if (this.inQuotedString) {
+			this.inQuotedString = false;
+		} else {
+			this.inQuotedString = true;
+		}
+	}
+		
 	protected void reset() {
 		this.pos = 0;
+		this.inQuotedString = false;
 		this.command = new String[IPC.COMMAND_SIZE];
 	}
 	
@@ -61,9 +98,17 @@ public abstract class IPC {
 		this.out.println(error);
 	}
 	
+	protected void reportError(int errorCode) {
+		this.reportError(Integer.toString(errorCode));
+	}
+	
 	protected void startOutput() {
+		this.startOutput(0);
+	}
+	
+	protected void startOutput(int rc) {
 		this.out.print(IPC.MARKER);
-		this.out.println("START OUTPUT");
+		this.out.println("START OUTPUT " + rc);
 	}
 	
 	protected void writeOutput(String output) {
@@ -79,6 +124,12 @@ public abstract class IPC {
 	protected void endOutput() {
 		this.out.print(IPC.MARKER);
 		this.out.println("END OUTPUT");
+	}
+	
+	protected void printCommand() {
+		for (int i=0; i<=this.pos; i++) {
+			System.err.println(i + ": " + this.command[i]);
+		}
 	}
 	
 	protected abstract void processCommand();

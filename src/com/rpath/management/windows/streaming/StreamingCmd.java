@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import org.apache.commons.cli.CommandLine;
 import org.jinterop.dcom.common.JIException;
 
+import com.rpath.management.windows.JILogging;
 import com.rpath.management.windows.ManagedSystem;
 import com.rpath.management.windows.WMIClientCmd;
 
@@ -37,6 +38,17 @@ public class StreamingCmd {
 			level = Level.INFO;
 		}
 
+		try {
+			@SuppressWarnings("unused")
+			JILogging log = new JILogging(level);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
 		ManagedSystem system = null;
 		
 		try {
