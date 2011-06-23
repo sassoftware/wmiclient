@@ -22,7 +22,7 @@ public abstract class IPC {
 	private boolean inQuotedString;
 	
 	private StreamTokenizer in;
-	private PrintStream out;
+	protected PrintStream out;
 	private PrintStream error;
 	protected String[] command;
 
@@ -38,8 +38,7 @@ public abstract class IPC {
 		this.in.eolIsSignificant(true);
 	}
 	
-	public void run() throws IOException {
-		this.command[this.pos] = new String();
+	public void run() throws IOException, Exception {
 		while (this.in.nextToken() != StreamTokenizer.TT_EOF) {
 			//System.err.println("state: " + (char)this.in.ttype + "(" + this.in.ttype + ")");
 			switch(this.in.ttype) {
@@ -50,7 +49,7 @@ public abstract class IPC {
 					this.handleQuote();
 					break;
 				case IPC.NEWLINE:
-					this.printCommand();
+					//this.printCommand();
 					this.processCommand();
 					this.reset();
 					break;
@@ -65,8 +64,15 @@ public abstract class IPC {
 		byte b = (byte)this.in.ttype;
 		byte [] ba = {b, };
 		String s = new String(ba);
+
+		//System.err.println("pos: " + this.pos);
+		//System.err.println("s: " + s);
+		//System.err.println("foo: " + this.command[this.pos]);
 		
-		this.command[this.pos] = this.command[this.pos].concat(s); 
+		String foo = this.command[this.pos];
+		String bar = foo.concat(s);
+		this.command[this.pos] = bar;
+		//this.command[this.pos] = this.command[this.pos].concat(s); 
 	}
 	
 	private void handleSpace() {
@@ -90,6 +96,7 @@ public abstract class IPC {
 		this.pos = 0;
 		this.inQuotedString = false;
 		this.command = new String[IPC.COMMAND_SIZE];
+		this.command[this.pos] = new String();
 	}
 	
 	protected void reportError(String error) {
@@ -127,9 +134,15 @@ public abstract class IPC {
 	}
 	
 	protected void printCommand() {
+		System.err.println("=================");
 		for (int i=0; i<=this.pos; i++) {
 			System.err.println(i + ": " + this.command[i]);
 		}
+		System.err.println("=================");
+	}
+	
+	protected int getCommandLength() {
+		return this.pos;
 	}
 	
 	protected abstract void processCommand();

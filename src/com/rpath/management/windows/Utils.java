@@ -3,6 +3,8 @@
  */
 package com.rpath.management.windows;
 
+import java.io.PrintStream;
+
 /**
  * @author Elliot Peele <elliot@rpath.com>
  *
@@ -60,5 +62,19 @@ public class Utils {
 	 */
 	public static String join(String[] input) {
 		return join(input, " ");
+	}
+	
+	/**
+	 * Display an array of strings, leaving out any null elements
+	 * @param output array of strings
+	 * @param out output stream to print them to
+	 */
+	public static void displayStringArray(String[] output, PrintStream out) {
+		if (output != null) {
+			for (String o : output) {
+				if (o != null)
+					out.println(o);
+			}
+		}
 	}
 }

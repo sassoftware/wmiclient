@@ -97,6 +97,9 @@ public class WMIClientCmd {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 			System.exit(1);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
 		
 		System.exit(0);
@@ -199,9 +202,9 @@ public class WMIClientCmd {
 	
 	/**
 	 * Start an interactive session.
-	 * @throws IOException 
+	 * @throws Exception 
 	 */
-	private static void interactiveCmd(ManagedSystem system) throws IOException {
+	private static void interactiveCmd(ManagedSystem system) throws Exception {
 		CommandProcessor processor = new CommandProcessor(system, System.in, System.out, System.err);
 		processor.run();
 	}
@@ -276,13 +279,7 @@ public class WMIClientCmd {
 			status = system.services.getStatus(options[0]);
 		}
 		
-		// Print status
-		if (status != null) {
-			for (String state : status) {
-				if (state != null)
-					System.out.println(state);
-			}
-		}
+		Utils.displayStringArray(status, System.out);
 	}
 
 	/**
@@ -335,49 +332,10 @@ public class WMIClientCmd {
 		
 		// Execute process command
 		if (args[0].equals("network")) {
-			ArrayList<JIVariant> queryResults = system.query.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
-		
-			for (int i=0; i<queryResults.size(); i++) {
-				IJIComObject obj = queryResults.get(i).getObjectAsComObject();
-				IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
-
-				Boolean IPEnabled = dispatch.get("IPEnabled").getObjectAsBoolean();
-				if (IPEnabled==false) {
-					continue;
-				}
-
-				int index = dispatch.get("InterfaceIndex").getObjectAsInt();
-				String hostName = " ";
-				try {
-					hostName = dispatch.get("DNSHostName").getObjectAsString2();
-				} catch (Exception e) {}
-				String domain = " ";
-				try {
-					domain = dispatch.get("DNSDomain").getObjectAsString2();
-				} catch (Exception e) {}
-				JIArray jiAddr = dispatch.get("IPAddress").getObjectAsArray();
-				JIVariant[] addr = (JIVariant[])jiAddr.getArrayInstance();
-
-				JIArray jiSubnet = dispatch.get("IPSubnet").getObjectAsArray();
-				JIVariant[] subnet = (JIVariant[])jiSubnet.getArrayInstance();
-				
-				for (int j=0; j<addr.length; j++) {
-					System.out.println(
-							index + ", "
-							+ addr[j].getObjectAsString2() + ", " 
-							+ subnet[j].getObjectAsString2() + ", " 
-							+ hostName + ", " 
-							+ domain
-							);
-				}
-			}
+			NetworkQueryResults[] results = system.query.queryNetwork();
+			system.query.displayNetworkQueryResults(results, System.out);
 		} else if (args[0].equals("uuid")) {
-			ArrayList<JIVariant> queryResults = system.query.query("SELECT * FROM Win32_ComputerSystemProduct");
-		
-			IJIComObject obj = queryResults.get(0).getObjectAsComObject();
-			IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
-				
-			String uuid = dispatch.get("UUID").getObjectAsString2();
+			String uuid = system.query.queryUUID();
 			System.out.println(uuid);
 		} else {
 			printUsage(usageStr);

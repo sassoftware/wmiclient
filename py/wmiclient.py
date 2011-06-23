@@ -4,6 +4,7 @@
 
 import sys
 import time
+import errno
 import socket
 import itertools
 import subprocess
@@ -176,6 +177,8 @@ class WMICResults(namedtuple('WMICResults', 'host rc stdout stderr')):
 
     @property
     def output(self):
+        if isinstance(self.stdout, list):
+            return self.stdout
         return self._split(self.stdout)
 
     @property
@@ -186,6 +189,9 @@ class WMICResults(namedtuple('WMICResults', 'host rc stdout stderr')):
 class AbstractCommand(object):
     _wmicCmd = (
         '/usr/bin/wmic',
+#        'java', '-classpath',
+#        'wmiclient.jar:commons-cli-1.3-SNAPSHOT.jar:jcifs-1.2.19.jar:j-interopdeps.jar:j-interop.jar',
+#        'com.rpath.management.windows.WMIClientCmd', 
         '--host', '%(host)s',
         '--user', '%(user)s',
         '--password', '%(password)s',
@@ -267,26 +273,40 @@ class InteractiveCommand(AbstractCommand):
         self._p = None
 
     def _createProcess(self):
-        if not self._p:
-            info = self._authInfo._asdict()
-            cmd = [ x % info for x in self._wmicCmd ]
+        info = self._authInfo._asdict()
+        cmd = [ x % info for x in self._wmicCmd ]
 
-            self._callback.debug('calling: %s' % (cmd, ))
+        self._callback.debug('calling: %s' % (cmd, ))
 
-            self._p = subprocess.Popen(cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=sys.stderr)
+        self._p = subprocess.Popen(cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=sys.stderr,
+#            cwd=os.environ['HOME'] + '/hg/wmiclient/dist/lib'
+        )
 
     def _write(self, data):
-        self._p.stdin.write(data)
+        try:
+            self._p.stdin.write(data)
+        except IOError, e:
+            # Restart the java vm if it dies.
+            if e.errno == errno.EPIPE:
+                self._createProcess()
+                self._p.stdin.write(data)
+            else:
+                raise
 
     def _readline(self):
         return self._p.stdout.readline().strip()
 
     def _run(self, args):
-        for arg in args:
-            self._write('"%s" ' % arg)
+        if not self._p:
+            self._createProcess()
+
+        cmd = ' '.join([ '"%s"' % x for x in args ])
+        self._callback.debug(cmd)
+
+        self._write(cmd)
         self._write('\n')
 
     def _parseOutput(self):
@@ -296,19 +316,22 @@ class InteractiveCommand(AbstractCommand):
         output = []
         error = None
         if line.startswith(self._ERROR):
-            error = line[len(self._ERROR):]
+            error = line[len(self._ERROR)+1:]
             if error[0].isdigit():
-                rc = error[0]
+                rc = int(error[0])
             else:
                 rc = -1
         elif line.startswith(self._START_OUTPUT):
             rc = int(line[len(self._START_OUTPUT):])
 
-            line = self._process.stdout.readline().strip()
+            line = self._readline()
             while not line.startswith(self._MARKER):
                 output.append(line)
-                line = self._process.stdout.readline().strip()
+                line = self._readline()
             assert line == self._END_OUTPUT
+
+        if len(output) == 1 and output[0] == '':
+            output = []
 
         return rc, output, error
 
@@ -360,7 +383,7 @@ class WMIClient(object):
         result = self._query('network')
 
         net_info = [
-            [ y.strip() for y in x.split(',') ] for x in result.iteroutput()
+            [ y.strip() for y in x.split(',') ] for x in result.output
         ]
 
         interfaces = []

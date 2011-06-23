@@ -5,6 +5,7 @@ package com.rpath.management.windows;
 
 import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -67,4 +68,71 @@ public class Query {
 		}
 		return ret;		
 	}
+	
+	public NetworkQueryResults[] queryNetwork() throws JIException {
+		ArrayList<JIVariant> queryResults = this.query("SELECT * FROM Win32_NetworkAdapterConfiguration");
+		
+		NetworkQueryResults[] results = new NetworkQueryResults[queryResults.size()];
+		for (int i=0; i<queryResults.size(); i++) {
+			IJIComObject obj = queryResults.get(i).getObjectAsComObject();
+			IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
+
+			Boolean IPEnabled = dispatch.get("IPEnabled").getObjectAsBoolean();
+			if (IPEnabled==false) {
+				continue;
+			}
+
+			int index = dispatch.get("InterfaceIndex").getObjectAsInt();
+			String hostName = " ";
+			try {
+				hostName = dispatch.get("DNSHostName").getObjectAsString2();
+			} catch (Exception e) {}
+
+			String domain = " ";
+			try {
+				domain = dispatch.get("DNSDomain").getObjectAsString2();
+			} catch (Exception e) {}
+			
+			JIArray jiAddr = dispatch.get("IPAddress").getObjectAsArray();
+			JIVariant[] addr = (JIVariant[])jiAddr.getArrayInstance();
+
+			JIArray jiSubnet = dispatch.get("IPSubnet").getObjectAsArray();
+			JIVariant[] subnet = (JIVariant[])jiSubnet.getArrayInstance();
+
+			results[i] = new NetworkQueryResults(index, hostName, domain, addr.length);		
+			for (int j=0; j<addr.length; j++) {
+				results[i].addAddress(addr[j].getObjectAsString2(), subnet[j].getObjectAsString2());
+			}
+		}
+		return results;
+	}
+	
+	public void displayNetworkQueryResults(NetworkQueryResults[] results, PrintStream out) {
+		for (int i=0; i<results.length; i++) {
+			NetworkQueryResults result = results[i];
+			if (result == null)
+				continue;
+			String[][] addresses = result.getAddresses();
+			for (int j=0; j<addresses.length; j++) {
+				out.println(
+						result.getIndex() + ", "
+						+ addresses[j][0] + ", " 
+						+ addresses[j][1] + ", " 
+						+ result.getHostname() + ", " 
+						+ result.getDomain()
+						);
+			}
+		}
+	}
+	
+	public String queryUUID() throws JIException {
+		ArrayList<JIVariant> queryResults = this.query("SELECT * FROM Win32_ComputerSystemProduct");
+		
+		IJIComObject obj = queryResults.get(0).getObjectAsComObject();
+		IJIDispatch dispatch = (IJIDispatch)narrowObject(obj);
+			
+		String uuid = dispatch.get("UUID").getObjectAsString2();
+		return uuid;
+	}
+	
 }
