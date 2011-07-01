@@ -23,7 +23,7 @@ public abstract class IPC {
 	
 	private StreamTokenizer in;
 	protected PrintStream out;
-	private PrintStream error;
+	protected PrintStream error;
 	protected String[] command;
 
 	public IPC(InputStream input, PrintStream output, PrintStream error) {
@@ -99,14 +99,22 @@ public abstract class IPC {
 		this.command[this.pos] = new String();
 	}
 	
-	protected void reportError(String error) {
+	public void reportError(String error) {
 		this.out.print(IPC.MARKER);
 		this.out.print("ERROR ");
 		this.out.println(error);
 	}
 	
-	protected void reportError(int errorCode) {
+	public void reportError(int errorCode) {
 		this.reportError(Integer.toString(errorCode));
+	}
+	
+	public void reportException(Exception e) {
+		this.out.print(IPC.MARKER);
+		this.out.println("START STACKTRACE");
+		e.printStackTrace(this.out);
+		this.out.print(IPC.MARKER);
+		this.out.println("END STACKTRACE");
 	}
 	
 	protected void startOutput() {
@@ -134,11 +142,11 @@ public abstract class IPC {
 	}
 	
 	protected void printCommand() {
-		System.err.println("=================");
+		this.error.println("=================");
 		for (int i=0; i<=this.pos; i++) {
-			System.err.println(i + ": " + this.command[i]);
+			this.error.println(i + ": " + this.command[i]);
 		}
-		System.err.println("=================");
+		this.error.println("=================");
 	}
 	
 	protected int getCommandLength() {

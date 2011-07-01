@@ -264,6 +264,8 @@ class InteractiveCommand(AbstractCommand):
     _ERROR = '= ERROR'
     _START_OUTPUT = '= START OUTPUT'
     _END_OUTPUT = '= END OUTPUT'
+    _START_STACKTRACE = '= START STACKTRACE'
+    _END_STACKTRACE = '= END STACKTRACE'
 
     def __init__(self, *args, **kwargs):
         AbstractCommand.__init__(self, *args, **kwargs)
@@ -313,14 +315,13 @@ class InteractiveCommand(AbstractCommand):
         line = self._readline()
         assert line.startswith(self._MARKER)
 
+        rc = -1
         output = []
-        error = None
+        error = []
         if line.startswith(self._ERROR):
-            error = line[len(self._ERROR)+1:]
-            if error[0].isdigit():
-                rc = int(error[0])
-            else:
-                rc = -1
+            error.append(line[len(self._ERROR)+1:])
+            if error[-1][0].isdigit():
+                rc = int(error[-1][0])
         elif line.startswith(self._START_OUTPUT):
             rc = int(line[len(self._START_OUTPUT):])
 
@@ -329,9 +330,18 @@ class InteractiveCommand(AbstractCommand):
                 output.append(line)
                 line = self._readline()
             assert line == self._END_OUTPUT
+        elif line.startswith(self._START_STACKTRACE):
+            line = self._readline()
+            while not line.startswith(self._MARKER):
+                error.append(line)
+                line = self._readline()
+            assert line == self._END_STACKTRACE
 
         if len(output) == 1 and output[0] == '':
             output = []
+
+        if len(error) == 1 and error[0] == '':
+            error = []
 
         return rc, output, error
 

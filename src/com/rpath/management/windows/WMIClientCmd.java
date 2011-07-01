@@ -5,7 +5,6 @@ package com.rpath.management.windows;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.logging.Level;
 
 import org.apache.commons.cli.CommandLine;
@@ -17,14 +16,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.jinterop.dcom.common.JIException;
-import org.jinterop.dcom.core.JIVariant;
-import org.jinterop.dcom.core.JIArray;
-import org.jinterop.dcom.core.IJIComObject;
-import org.jinterop.dcom.impls.automation.IJIDispatch;
-
 import com.rpath.management.windows.streaming.CommandProcessor;
-
-import static org.jinterop.dcom.impls.JIObjectFactory.narrowObject;
 
 /**
  * @author Elliot Peele <elliot@rpath.com>
@@ -69,12 +61,38 @@ public class WMIClientCmd {
 		
 		ManagedSystem system = null;
 		
+		/* 
+		 * Exceptions need to be handled differently for the interactive
+		 * commands so that status gets reported correctly.
+		 */
+		if (cmdline.hasOption("interactive")) {
+			CommandProcessor processor = new CommandProcessor(system, System.in, System.out, System.err);
+			
+			try {
+				system = new ManagedSystem(host, domain, user, password);
+				processor.run();
+			} catch (UnknownHostException e) {
+				processor.reportException(e);
+				System.exit(1);
+			} catch (JIException e) {
+				processor.reportError(e.getErrorCode());
+				processor.reportException(e);
+				System.exit(1);
+			} catch (Exception e) {
+				processor.reportException(e);
+				System.exit(1);
+			}
+
+			System.exit(0);
+		}
+		
+		/*
+		 * Handling for non interactive commands.
+		 */
 		try {
 			system = new ManagedSystem(host, domain, user, password);
 
-			if (cmdline.hasOption("interactive")) {
-				interactiveCmd(system);
-			} else if (remaining[0].equals("registry")) {
+			if (remaining[0].equals("registry")) {
 				registryCmd(system, Utils.slice(remaining, 1));
 			} else if (remaining[0].equals("service")) {
 				serviceCmd(system, Utils.slice(remaining, 1));
@@ -93,10 +111,6 @@ public class WMIClientCmd {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 			System.exit(e.getErrorCode());
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-			System.exit(1);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -199,15 +213,6 @@ public class WMIClientCmd {
 	/*
 	 * Start command functions.
 	 */
-	
-	/**
-	 * Start an interactive session.
-	 * @throws Exception 
-	 */
-	private static void interactiveCmd(ManagedSystem system) throws Exception {
-		CommandProcessor processor = new CommandProcessor(system, System.in, System.out, System.err);
-		processor.run();
-	}
 	
 	/**
 	 * Handle the registry sub command.
