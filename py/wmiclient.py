@@ -99,29 +99,28 @@ class WMIUnknownError(WMIBaseError):
 
 class WMIErrorCodes(object):
     UNKNOWN = -1
-    ERR_TIMEOUT = 1
-    ERR_FILE_NOT_FOUND = 2
-    ERR_ACCESS_DENIED = 5
-    ERR_ACCESS_DENIED2 = 0xBD00
-    ERR_BAD_CREDENTIALS = 0x6D00
+    ERR_TIMEOUT = 0x000005B4
+    WAIT_TIMEOUT = 0x00000102
+    ERROR_FILE_NOT_FOUND = 0x00000002
+    STATUS_LOGON_FAILURE = 0xC000006D
+    ERROR_WRONG_PASSWORD = 0x0000052B
 
     __slots__ = ()
 
     _msgs = {
         ERR_TIMEOUT:
             'Timeout waiting for a response.',
-        ERR_FILE_NOT_FOUND:
+        WAIT_TIMEOUT:
+            'Timeout waiting for a response.',
+        ERROR_FILE_NOT_FOUND:
             'The file or registry key/value pair cannot be found.',
-        ERR_ACCESS_DENIED:
+        STATUS_LOGON_FAILURE:
             'The credentials provided do not have permission '
             'to access the requested resource. If this system is runnin '
             'Windows 2008 R2, please refer to the \'rPath Platform Guilde for '
             'Microsoft Windows\' for special configuration requirements '
             'necessary to enable remote WMI access.',
-        ERR_ACCESS_DENIED2:
-            'The credentials provided do not have permission to access the '
-            'requested resource.',
-        ERR_BAD_CREDENTIALS:
+        ERROR_WRONG_PASSWORD:
             'The username, password, or domain is invalid.',
         UNKNOWN:
             'Undefined error code.',
@@ -134,10 +133,10 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
 
     _exceptions = {
         ERR_TIMEOUT: WMITimeoutError,
-        ERR_FILE_NOT_FOUND: WMIFileNotFoundError,
-        ERR_ACCESS_DENIED: WMIAccessDeniedError,
-        ERR_ACCESS_DENIED2: WMIAccessDeniedError,
-        ERR_BAD_CREDENTIALS: WMIBadCredentialsError,
+        WAIT_TIMEOUT: WMITimeoutError,
+        ERROR_FILE_NOT_FOUND: WMIFileNotFoundError,
+        STATUS_LOGON_FAILURE: WMIAccessDeniedError,
+        ERROR_WRONG_PASSWORD: WMIBadCredentialsError,
         UNKNOWN: WMIUnknownError,
     }
     _default_exception = _exceptions[UNKNOWN]
@@ -322,6 +321,8 @@ class InteractiveCommand(AbstractCommand):
             error.append(line[len(self._ERROR)+1:])
             if error[-1][0].isdigit():
                 rc = int(error[-1][0])
+            elif error[-1][0].startswith('0x'):
+                rc = int(error[-1][0], 16)
         elif line.startswith(self._START_OUTPUT):
             rc = int(line[len(self._START_OUTPUT):])
 

@@ -75,7 +75,7 @@ public class WMIClientCmd {
 				processor.reportException(e);
 				System.exit(1);
 			} catch (JIException e) {
-				processor.reportError(e.getErrorCode());
+				processor.reportError(Integer.toHexString(e.getErrorCode()));
 				processor.reportException(e);
 				System.exit(1);
 			} catch (Exception e) {
