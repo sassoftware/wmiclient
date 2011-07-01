@@ -42,6 +42,10 @@ public class CommandProcessor extends IPC {
 			this.reportError("invalid command " + cmd);
 	}
 
+	public void reportError(int errorCode) {
+		super.reportError("0x" + Integer.toHexString(errorCode).toUpperCase());
+	}
+	
 	private void handleRegistryCommand() {
 		String cmd = this.command[1];
 		if (cmd.equals("getkey"))
