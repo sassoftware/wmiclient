@@ -70,6 +70,7 @@ public class WMIClientCmd {
 			
 			try {
 				system = new ManagedSystem(host, domain, user, password);
+				processor.setSystem(system);
 				processor.run();
 			} catch (UnknownHostException e) {
 				processor.reportException(e);

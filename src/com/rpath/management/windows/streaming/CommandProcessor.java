@@ -18,6 +18,10 @@ public class CommandProcessor extends IPC {
 		this.system = system;
 	}
 
+	public void setSystem(ManagedSystem system) {
+		this.system = system;
+	}
+	
 	public void run() throws Exception {
 		try {
 			super.run();
