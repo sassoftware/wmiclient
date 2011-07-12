@@ -212,6 +212,9 @@ class AbstractCommand(object):
         self._run(args)
         rc, output, error = self._parseOutput()
 
+        self._callback.debug('\n'.join(args))
+        self._callback.debug('\n'.join(error))
+
         return WMICResults(self._authInfo.host, rc, output, error)
 
     def _run(self, args):
@@ -298,7 +301,9 @@ class InteractiveCommand(AbstractCommand):
                 raise
 
     def _readline(self):
-        return self._p.stdout.readline().strip()
+        line = self._p.stdout.readline().strip()
+        self._callback.debug(line)
+        return line
 
     def _run(self, args):
         if not self._p:
