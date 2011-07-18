@@ -3,10 +3,7 @@
  */
 package com.rpath.management.windows;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.JIVariant;
 import org.jinterop.dcom.impls.automation.IJIDispatch;
