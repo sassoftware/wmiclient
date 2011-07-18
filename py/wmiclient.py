@@ -93,6 +93,10 @@ class WMIBadCredentialsError(WMIBaseError):
     pass
 
 
+class WMIInternalError(WMIBaseError):
+    pass
+
+
 class WMIUnknownError(WMIBaseError):
     pass
 
@@ -104,6 +108,7 @@ class WMIErrorCodes(object):
     ERROR_FILE_NOT_FOUND = 0x00000002
     STATUS_LOGON_FAILURE = 0xC000006D
     ERROR_WRONG_PASSWORD = 0x0000052B
+    INTERNAL_ERROR = 0x8001FFFF
 
     __slots__ = ()
 
@@ -122,6 +127,8 @@ class WMIErrorCodes(object):
             'necessary to enable remote WMI access.',
         ERROR_WRONG_PASSWORD:
             'The username, password, or domain is invalid.',
+        INTERNAL_ERROR:
+            'An internal WMI error occurred.',
         UNKNOWN:
             'Undefined error code.',
     }
@@ -137,6 +144,7 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
         ERROR_FILE_NOT_FOUND: WMIFileNotFoundError,
         STATUS_LOGON_FAILURE: WMIAccessDeniedError,
         ERROR_WRONG_PASSWORD: WMIBadCredentialsError,
+        INTERNAL_ERROR: WMIInternalError,
         UNKNOWN: WMIUnknownError,
     }
     _default_exception = _exceptions[UNKNOWN]
@@ -324,10 +332,10 @@ class InteractiveCommand(AbstractCommand):
         error = []
         if line.startswith(self._ERROR):
             error.append(line[len(self._ERROR)+1:])
-            if error[-1][0].isdigit():
+            if error[-1].startswith('0x'):
+                rc = int(error[-1], 16)
+            elif error[-1][0].isdigit():
                 rc = int(error[-1][0])
-            elif error[-1][0].startswith('0x'):
-                rc = int(error[-1][0], 16)
         elif line.startswith(self._START_OUTPUT):
             rc = int(line[len(self._START_OUTPUT):])
 
