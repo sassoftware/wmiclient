@@ -364,8 +364,13 @@ class InteractiveCommand(AbstractCommand):
 
     def close(self):
         if self._p:
-            self._p.terminate()
-            self._p.wait()
+            try:
+                self._p.terminate()
+                self._p.wait()
+            except OSError, e:
+                # Don't fail if the process is already dead.
+                if e.errno != errno.ESRCH:
+                    raise
 
 
 class WMIClient(object):
