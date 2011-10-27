@@ -73,10 +73,10 @@ public class StatusCodes {
 	 * @param code
 	 */
 	public boolean is_error(int code) {
-		if (code !=0)
-			return false;
-		else
+		if (code != 0)
 			return true;
+		else
+			return false;
 	}
 	
 	/**
