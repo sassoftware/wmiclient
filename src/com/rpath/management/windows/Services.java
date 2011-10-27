@@ -61,8 +61,9 @@ public class Services {
 	 * 
 	 * @param serviceName name of the service to start
 	 * @throws JIException 
+	 * @throws ServiceNotFoundError 
 	 */
-	public String[] startService(String serviceName) throws JIException {
+	public String[] startService(String serviceName) throws JIException, ServiceNotFoundError {
 		return this.status_codes.reportStatus(this.service(serviceName, "StartService"), false);
 	}
 	
@@ -71,8 +72,9 @@ public class Services {
 	 * 
 	 * @param serviceName name of the service to stop
 	 * @throws JIException 
+	 * @throws ServiceNotFoundError 
 	 */
-	public String[] stopService(String serviceName) throws JIException {
+	public String[] stopService(String serviceName) throws JIException, ServiceNotFoundError {
 		return this.status_codes.reportStatus(this.service(serviceName, "StopService"));
 	}
 	
@@ -81,8 +83,9 @@ public class Services {
 	 * 
 	 * @param serviceName name of the service to query
 	 * @throws JIException 
+	 * @throws ServiceNotFoundError 
 	 */
-	public String[] getStatus(String serviceName) throws JIException {
+	public String[] getStatus(String serviceName) throws JIException, ServiceNotFoundError {
 		return this.status_codes.reportStatus(this.service(serviceName, "InterrogateService"), false);
 	}
 	
@@ -92,11 +95,16 @@ public class Services {
 	 * @param seviceName name of the service act on
 	 * @param action name of the method to execute for a given service
 	 * @throws JIException 
+	 * @throws ServiceNotFoundError 
 	 */
-	private Integer[] service(String serviceName, String action) throws JIException {
+	private Integer[] service(String serviceName, String action) throws JIException, ServiceNotFoundError {
 		// Query the machine for instances of the given service name
 		String queryStr = "SELECT * FROM Win32_Service WHERE Caption='" + serviceName + "'";
 		ArrayList<JIVariant> queryList = this.query.query(queryStr);
+		
+		if (queryList.size() == 0) {
+			throw new ServiceNotFoundError(serviceName);
+		}
 		
 		// Create an array for storing status information
 		Integer[] status = new Integer[queryList.size()];

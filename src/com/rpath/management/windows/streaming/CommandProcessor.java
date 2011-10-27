@@ -8,6 +8,7 @@ import org.jinterop.dcom.common.JIException;
 
 import com.rpath.management.windows.ManagedSystem;
 import com.rpath.management.windows.NetworkQueryResults;
+import com.rpath.management.windows.ServiceNotFoundError;
 import com.rpath.management.windows.Utils;
 
 public class CommandProcessor extends IPC {
@@ -132,6 +133,8 @@ public class CommandProcessor extends IPC {
 			status = this.system.services.startService(this.command[2]);
 		} catch (JIException e) {
 			this.reportError(e.getErrorCode());
+		} catch (ServiceNotFoundError e) {
+			this.reportError(e.getError());
 		}
 
 		this.startOutput();
@@ -145,6 +148,8 @@ public class CommandProcessor extends IPC {
 			status = this.system.services.stopService(this.command[2]);
 		} catch (JIException e) {
 			this.reportError(e.getErrorCode());
+		} catch (ServiceNotFoundError e) {
+			this.reportError(e.getError());
 		}
 		
 		this.startOutput();
@@ -158,6 +163,8 @@ public class CommandProcessor extends IPC {
 			status = this.system.services.getStatus(this.command[2]);
 		} catch (JIException e) {
 			this.reportError(e.getErrorCode());
+		} catch (ServiceNotFoundError e) {
+			this.reportError(e.getError());
 		}
 		
 		this.startOutput();

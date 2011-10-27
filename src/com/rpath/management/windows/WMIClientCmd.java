@@ -79,6 +79,10 @@ public class WMIClientCmd {
 				processor.reportError(e.getErrorCode());
 				processor.reportException(e);
 				System.exit(1);
+			} catch (ServiceNotFoundError e) {
+				processor.reportError(e.getError());
+				processor.reportException(e);
+				System.exit(1);
 			} catch (Exception e) {
 				processor.reportException(e);
 				System.exit(1);
@@ -259,8 +263,9 @@ public class WMIClientCmd {
 	/**
 	 * Handle the service sub command.
 	 * @throws JIException 
+	 * @throws ServiceNotFoundError 
 	 */
-	private static void serviceCmd(ManagedSystem system, String[] args) throws JIException {
+	private static void serviceCmd(ManagedSystem system, String[] args) throws JIException, ServiceNotFoundError {
 		if (args.length == 0)
 			printUsage("service <start|stop> <serviceName>");
 		
