@@ -63,7 +63,7 @@ public class Services {
 	 * @throws JIException 
 	 */
 	public String[] startService(String serviceName) throws JIException {
-		return this.status_codes.reportStatus(this.service(serviceName, "StartService"));
+		return this.status_codes.reportStatus(this.service(serviceName, "StartService"), false);
 	}
 	
 	/**
