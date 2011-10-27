@@ -225,6 +225,9 @@ class AbstractCommand(object):
 
         return WMICResults(self._authInfo.host, rc, output, error)
 
+    def close(self):
+        pass
+
     def _run(self, args):
         raise NotImplementedError
 
@@ -359,6 +362,15 @@ class InteractiveCommand(AbstractCommand):
 
         return rc, output, error
 
+    def close(self):
+        if self._p:
+            try:
+                self._p.terminate()
+                self._p.wait()
+            except OSError, e:
+                # Don't fail if the process is already dead.
+                if e.errno != errno.ESRCH:
+                    raise
 
 
 class WMIClient(object):
@@ -381,6 +393,9 @@ class WMIClient(object):
             self._cmd = DefaultCommand(self._authInfo, self._callback)
 
         self._errors = self._ErrorClass()
+
+    def close(self):
+        self._cmd.close()
 
     def _request(self, *args):
         result = self._cmd.execute(*args)
