@@ -23,9 +23,10 @@ class WindowsAuthInfo(namedtuple('WindowsAuthInfo', 'host domain user password')
         Get the IP address of a given host.
         """
 
-        name, _, addressList = socket.gethostbyaddr(host)
-        assert len(addressList)
-        return addressList[0]
+        addrinfo = socket.getaddrinfo(host, 0)
+
+        # (2, 1, 6, '', ('127.0.0.1', 0))
+        return addrinfo[0][-1][0]
 
 
 class NetworkInterface(namedtuple('NetworkInterface', 'name ip_address '
