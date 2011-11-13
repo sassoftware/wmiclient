@@ -372,6 +372,7 @@ class InteractiveCommand(AbstractCommand):
                 # Don't fail if the process is already dead.
                 if e.errno != errno.ESRCH:
                     raise
+            self._p = None
 
 
 class WMIClient(object):
