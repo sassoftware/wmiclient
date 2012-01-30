@@ -98,6 +98,10 @@ class WMIInternalError(WMIBaseError):
     pass
 
 
+class WMIOperationFailedError(WMIBaseError):
+    pass
+
+
 class WMIUnknownError(WMIBaseError):
     pass
 
@@ -110,6 +114,7 @@ class WMIErrorCodes(object):
     STATUS_LOGON_FAILURE = 0xC000006D
     ERROR_WRONG_PASSWORD = 0x0000052B
     INTERNAL_ERROR = 0x8001FFFF
+    OPERATION_FAILED = 0xC0000001
 
     __slots__ = ()
 
@@ -130,6 +135,8 @@ class WMIErrorCodes(object):
             'The username, password, or domain is invalid.',
         INTERNAL_ERROR:
             'An internal WMI error occurred.',
+        OPERATION_FAILED:
+            'The requested operation was unsuccessful.',
         UNKNOWN:
             'Undefined error code.',
     }
@@ -146,6 +153,7 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
         STATUS_LOGON_FAILURE: WMIAccessDeniedError,
         ERROR_WRONG_PASSWORD: WMIBadCredentialsError,
         INTERNAL_ERROR: WMIInternalError,
+        OPERATION_FAILED: WMIOperationFailedError,
         UNKNOWN: WMIUnknownError,
     }
     _default_exception = _exceptions[UNKNOWN]
