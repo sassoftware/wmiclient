@@ -79,31 +79,35 @@ class WMIBaseError(Exception):
 
 
 class WMITimeoutError(WMIBaseError):
-    pass
+    error = 'Timeout waiting for a response.'
 
 
 class WMIFileNotFoundError(WMIBaseError):
-    pass
+    error = 'The file or registry key/value pair cannot be found.'
 
 
 class WMIAccessDeniedError(WMIBaseError):
-    pass
+    error = ('The credentials provided do not have permission '
+             'to access the requested resource. If this system is runnin '
+             'Windows 2008 R2, please refer to the \'rPath Platform Guilde for '
+             'Microsoft Windows\' for special configuration requirements '
+             'necessary to enable remote WMI access.')
 
 
 class WMIBadCredentialsError(WMIBaseError):
-    pass
+    error = 'The username, password, or domain is invalid.'
 
 
 class WMIInternalError(WMIBaseError):
-    pass
+    error = 'An internal WMI error occurred.'
 
 
 class WMIOperationFailedError(WMIBaseError):
-    pass
+    error = 'The requested operation was unsuccessful.'
 
 
 class WMIUnknownError(WMIBaseError):
-    pass
+    error = 'Undefined error code.'
 
 
 class WMIErrorCodes(object):
@@ -115,32 +119,9 @@ class WMIErrorCodes(object):
     ERROR_WRONG_PASSWORD = 0x0000052B
     INTERNAL_ERROR = 0x8001FFFF
     OPERATION_FAILED = 0xC0000001
+    ACCESS_DENIED = 0x00000005
 
     __slots__ = ()
-
-    _msgs = {
-        ERR_TIMEOUT:
-            'Timeout waiting for a response.',
-        WAIT_TIMEOUT:
-            'Timeout waiting for a response.',
-        ERROR_FILE_NOT_FOUND:
-            'The file or registry key/value pair cannot be found.',
-        STATUS_LOGON_FAILURE:
-            'The credentials provided do not have permission '
-            'to access the requested resource. If this system is runnin '
-            'Windows 2008 R2, please refer to the \'rPath Platform Guilde for '
-            'Microsoft Windows\' for special configuration requirements '
-            'necessary to enable remote WMI access.',
-        ERROR_WRONG_PASSWORD:
-            'The username, password, or domain is invalid.',
-        INTERNAL_ERROR:
-            'An internal WMI error occurred.',
-        OPERATION_FAILED:
-            'The requested operation was unsuccessful.',
-        UNKNOWN:
-            'Undefined error code.',
-    }
-    _default_message = _msgs[UNKNOWN]
 
     _msg_template = """\
 WMIClient Error, client returned code %(rc)s: %(msg)s
@@ -154,6 +135,7 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
         ERROR_WRONG_PASSWORD: WMIBadCredentialsError,
         INTERNAL_ERROR: WMIInternalError,
         OPERATION_FAILED: WMIOperationFailedError,
+        ACCESS_DENIED: WMIAccessDeniedError,
         UNKNOWN: WMIUnknownError,
     }
     _default_exception = _exceptions[UNKNOWN]
@@ -170,8 +152,7 @@ WMIClient Error, client returned code %(rc)s: %(msg)s
     @classmethod
     def error(cls, result):
         errorCls = cls._exceptions.get(result.rc, cls._default_exception)
-        msg = cls._msgs.get(result.rc, cls._default_message)
-        message = cls._msg_template % {'rc': result.rc, 'msg': msg}
+        message = cls._msg_template % {'rc': result.rc, 'msg': errorCls.error}
         return errorCls(result, message)
 
 
