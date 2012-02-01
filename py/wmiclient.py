@@ -88,8 +88,8 @@ class WMIFileNotFoundError(WMIBaseError):
 
 class WMIAccessDeniedError(WMIBaseError):
     error = ('The credentials provided do not have permission '
-             'to access the requested resource. If this system is runnin '
-             'Windows 2008 R2, please refer to the \'rPath Platform Guilde for '
+             'to access the requested resource. If this system is running '
+             'Windows 2008 R2, please refer to the \'rPath Platform Guide for '
              'Microsoft Windows\' for special configuration requirements '
              'necessary to enable remote WMI access.')
 
