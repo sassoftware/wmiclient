@@ -8,10 +8,8 @@ class WMIClient(PackageRecipe):
     version = '1.0'
 
     buildRequires = [
-        'ant:runtime',
-        'sun-jdk:runtime',
-        'sun-jdk:java',
-        'sun-jdk:lib',
+        'ant',
+        'java-1.6.0-openjdk-devel',
         ]
 
     def setup(r):
@@ -30,4 +28,4 @@ class WMIClient(PackageRecipe):
             'java': ('runtime',),
             'runtime': ('python',),
             })
-        r.Requires('sun-jre:runtime', '%(bindir)s/wmic')
+        r.Requires('java-1.6.0-openjdk:rpm', '%(bindir)s/wmic')

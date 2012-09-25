@@ -9,7 +9,7 @@
 
 . /etc/profile.d/sun-jre.sh
 
-WMICDIR="%(wmicdir)s"
+WMICDIR="/usr/share/wmiclient"
 
 CLASSPATH=""
 for jar in $WMICDIR/*.jar ; do
