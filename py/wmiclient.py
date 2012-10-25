@@ -450,13 +450,13 @@ class WMIClient(object):
             raise self._errors.get(result)
         return result
 
-    def registrySetKey(self, keyPath, key, value):
+    def registrySetKey(self, keyPath, key, value, dtype='REG_MULTI_SZ'):
         if not isinstance(value, list):
             value = [value, ]
         if not value:
             value = ['', ]
 
-        return self._request('registry', 'setkey', keyPath, key, *value)
+        return self._request('registry', 'setkey', keyPath, key, dtype, *value)
 
     def registryCreateKey(self, keyPath, key):
         return self._request('registry', 'createkey', keyPath, key)

@@ -5,6 +5,7 @@
 package com.rpath.management.windows;
 
 import java.net.UnknownHostException;
+import java.util.Hashtable;
 
 import org.jinterop.dcom.common.IJIAuthInfo;
 import org.jinterop.dcom.common.JIException;
@@ -21,15 +22,24 @@ public class Registry {
 	private String address = null;
 	private IJIAuthInfo authInfo = null;
 	
+	@SuppressWarnings("rawtypes")
+	public Hashtable types = null;
+	public String REG_SZ = "REG_SZ";
+	public String REG_MULTI_SZ = "REG_MULTI_SZ";
+	
 	/**
 	 * Constructor for registry interactions.
 	 * 
 	 * @param address IP address or DNS name of the system to contact
 	 * @param authInfo Authentication token for WMI interactions
 	 */
+	@SuppressWarnings("unchecked")
 	public Registry(String address, IJIAuthInfo authInfo) {
 		this.address = address;
 		this.authInfo = authInfo;
+		this.types = new Hashtable();
+		this.types.put(this.REG_SZ, (Integer)IJIWinReg.REG_SZ);
+		this.types.put(this.REG_MULTI_SZ, (Integer)IJIWinReg.REG_MULTI_SZ);
 	}
 		
 	/**
@@ -81,7 +91,7 @@ public class Registry {
 	 * @throws JIException 
 	 * @throws UnknownHostException 
 	 */
-	public void setKey(String keyPath, String key, String[] values) throws UnknownHostException, JIException {
+	public void setKey(String keyPath, String key, String[] values, Integer dtype) throws UnknownHostException, JIException {
 		// Get a handle for talking to the registry
 		RegistryHandle handle = new RegistryHandle(this.address, this.authInfo);
 		
@@ -89,12 +99,10 @@ public class Registry {
 		JIPolicyHandle regkey = handle.openKey(keyPath);
 
 		// Read the key to get the type
-		Integer dtype = new Integer(-1);
 		try {
 			Object[] oldData = handle.registry.winreg_QueryValue(regkey, key, 2*1024*1024);
 			dtype = (Integer)oldData[0];
 		} catch(JIException e) {
-			handle.registry.winreg_SetValue(regkey, key);
 		}
 		
 		// Create and set the new data
@@ -103,7 +111,7 @@ public class Registry {
 			handle.registry.winreg_SetValue(regkey, key, regData);			
 		} else if (dtype == IJIWinReg.REG_SZ || dtype == IJIWinReg.REG_EXPAND_SZ) {
 			byte[] regData = values[0].getBytes();
-			handle.registry.winreg_SetValue(regkey, key, regData, false, dtype == IJIWinReg.REG_EXPAND_SZ);			
+			handle.registry.winreg_SetValue(regkey, key, regData, false, dtype == IJIWinReg.REG_SZ);			
 		} else if (dtype == IJIWinReg.REG_BINARY) {
 			byte[] regData = new byte[values.length];
 			for (int i=0; i<values.length; i++) { 
@@ -122,6 +130,14 @@ public class Registry {
 		
 		// Tear down connection
 		handle.closeConnection();
+	}
+	
+	public void setKey(String keyPath, String key, String[] values, String dtype) throws UnknownHostException, JIException {
+		this.setKey(keyPath, key, values, (Integer)this.types.get(dtype));
+	}
+	
+	public void setKey(String keyPath, String key, String[] values) throws UnknownHostException, JIException {
+		this.setKey(keyPath, key, values, IJIWinReg.REG_MULTI_SZ);
 	}
 
 	/**
