@@ -87,7 +87,7 @@ public class CommandProcessor extends IPC {
 		String data_type = null;
 		
 		try {
-			if (values.length >= 1 && this.system.registry.types.contains(values[0])) {
+			if (values.length >= 1 && this.system.registry.types.containsKey(values[0])) {
 				data_type = values[0];
 				values = Utils.slice(values, 1);
 			} else {
