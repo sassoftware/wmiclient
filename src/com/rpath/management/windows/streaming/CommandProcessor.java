@@ -106,9 +106,17 @@ public class CommandProcessor extends IPC {
 
 	private void handleRegistrySetKey() {
 		String[] values = Utils.slice(this.command, 4, this.getCommandLength());
+
+		String data_type = null;
 		
 		try {
-			this.system.registry.setKey(this.command[2], this.command[3], values);
+			if (values.length >= 1 && this.system.registry.types.containsKey(values[0])) {
+				data_type = values[0];
+				values = Utils.slice(values, 1);
+			} else {
+				data_type = this.system.registry.REG_MULTI_SZ;
+			}
+			this.system.registry.setKey(this.command[2], this.command[3], values, data_type);
 		} catch (UnknownHostException e) {
 			this.reportError("setkey failed");
 			return;

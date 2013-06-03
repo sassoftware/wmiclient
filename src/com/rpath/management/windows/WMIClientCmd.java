@@ -277,7 +277,11 @@ public class WMIClientCmd {
 				System.out.println(data[i]);
 		} else if (action.equals("setkey")) {
 			String[] values = Utils.slice(options, 2);
-			system.registry.setKey(options[0], options[1], values);
+			if (system.registry.types.contains(values[0])) {
+				system.registry.setKey(options[0], options[1], Utils.slice(options, 3), values[0]);
+			} else {
+				system.registry.setKey(options[0], options[1], values);
+			}
 		} else if (action.equals("createkey")) {
 			system.registry.createKey(options[0], options[1]);
 		}
